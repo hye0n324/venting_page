@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>환기 Venting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+ color-scheme:light;
+ --paper:#F8F2E7;--paper2:#F1E8D7;--ink:#2B211A;--ink2:#48392D;--mut:#7F6F5F;--line:#E1D5BF;
+ --amber:#C0562B;--deep:#8E3A1E;--cold:#4E6E8E;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:300 17px/1.85 "IBM Plex Sans KR",system-ui,sans-serif;word-break:keep-all;overflow-x:hidden}
+body.lock{overflow:hidden}
+body.home footer{display:none}
+h1,h2,h3,h4,.ser{font-family:"Gowun Batang",serif;font-weight:700;margin:0;line-height:1.3}
+p{margin:0 0 14px;max-width:62ch}
+button,input{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 26px}
+.lab{font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.26em;color:var(--mut);text-transform:uppercase}
+.mono{font-family:"IBM Plex Mono",monospace}
+ul.b{list-style:none;margin:0;padding:0;max-width:62ch}
+ul.b li{position:relative;padding-left:18px;margin-bottom:10px;font-size:16px}
+ul.b li::before{content:"";position:absolute;left:0;top:14px;width:8px;height:1px;background:var(--mut)}
+ul.b li b{font-weight:500}
+.pill{border:1px solid var(--line);border-radius:30px;padding:7px 17px;font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:var(--mut);transition:.3s}
+.pill:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ========== loader ========== */
+#load{position:fixed;inset:0;z-index:90;background:var(--paper);overflow:hidden;transition:opacity .85s .3s}
+#load.out{opacity:0;pointer-events:none}
+#load canvas{position:absolute;inset:0;width:100%;height:100%}
+#load::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;
+ background:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  repeating-linear-gradient(90deg,rgba(120,92,58,.04) 0 1px,transparent 1px 3px),
+  radial-gradient(120% 100% at 50% 42%,transparent 54%,rgba(120,86,48,.2) 100%);
+ mix-blend-mode:multiply}
+.lnum{position:absolute;left:0;right:0;top:50%;transform:translateY(-62%);text-align:center;z-index:3;
+ font-family:"Gowun Batang",serif;font-weight:700;color:var(--amber);font-size:clamp(62px,13vw,152px);line-height:1}
+.lnum em{font-style:normal;font-size:.52em;margin-left:.04em}
+#load .barl{position:absolute;left:0;bottom:0;height:2px;background:var(--amber);width:0;z-index:4}
+.pile{position:absolute;left:0;right:0;bottom:0;height:min(56vh,430px);z-index:2}
+.pile .it{position:absolute;transform:translateY(135vh) rotate(0deg);
+ transition:transform 1s cubic-bezier(.25,1.05,.4,1)}
+.pile .it.d{transform:translateY(0) rotate(var(--r))}
+.pile .it svg{display:block;width:100%;height:auto;filter:url(#rough) drop-shadow(0 12px 20px rgba(90,46,18,.22))}
+#load.out .pile .it{transform:translateY(46vh) rotate(var(--r));transition:transform .75s cubic-bezier(.5,0,.9,.4)}
+
+/* ========== top bar ========== */
+#bar{position:fixed;top:0;left:0;right:0;z-index:70;display:flex;align-items:center;justify-content:space-between;padding:17px 26px;pointer-events:none;opacity:0;transition:opacity .8s}
+#bar.on{opacity:1}
+#bar>*{pointer-events:auto}
+#bar .mark{font-family:"Gowun Batang",serif;font-size:21px;letter-spacing:.22em;margin-left:.22em;position:absolute;left:50%;transform:translateX(-50%)}
+#bar .mark small{display:block;font:500 8.5px/1 "IBM Plex Mono",monospace;letter-spacing:.42em;color:var(--mut);text-align:center;margin-top:5px;margin-left:.42em}
+#bar .rt{display:flex;gap:9px;align-items:center}
+.dia{height:34px;padding:0 12px 0 10px;border:1px solid var(--line);border-radius:30px;display:flex;align-items:center;gap:6px;color:var(--mut);transition:.3s}
+.dia svg{display:block;overflow:visible}
+.dia .spk{fill:currentColor}
+.dia .wv path,.dia .mx path{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.dia .wv{display:none}
+.dia .sl{font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.18em}
+.dia[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.dia[aria-pressed="true"] .wv{display:inline;animation:wave 1.6s ease-in-out infinite}
+.dia[aria-pressed="true"] .mx{display:none}
+@keyframes wave{50%{opacity:.35}}
+.dia:hover{border-color:var(--ink);color:var(--ink)}
+@media(max-width:620px){#bar{padding:13px 16px}#bar .mark{font-size:18px}}
+
+/* ========== menu overlay ========== */
+.mclose{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2;
+ padding:11px 26px;border:1px solid rgba(255,246,235,.6);border-radius:30px;color:#FFF6EB;background:none;
+ font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.24em;opacity:0;transition:opacity .4s .45s,background .25s,color .25s}
+#menu.on .mclose{opacity:1}
+.mclose:hover{background:#FFF6EB;color:var(--amber)}
+#menu{position:fixed;inset:0;z-index:80;padding:clamp(56px,8vh,80px) 0 calc(78px + env(safe-area-inset-bottom,0px));box-sizing:border-box;background:var(--amber);color:var(--paper);display:flex;flex-direction:column;justify-content:center;
+ clip-path:inset(0 0 100% 0);transition:clip-path .85s cubic-bezier(.76,0,.24,1);pointer-events:none}
+#menu.on{clip-path:inset(0 0 0 0);pointer-events:auto}
+#menu .mi{display:block;width:100%;border-top:1px solid rgba(94,28,10,.28);padding:clamp(6px,1.7vh,22px) 26px;text-align:center;position:relative}
+#menu .mi:last-of-type{border-bottom:1px solid rgba(94,28,10,.28)}
+#menu .mi .t{font-family:"Gowun Batang",serif;font-size:clamp(30px,min(9vw,8.2vh),100px);line-height:1.05;letter-spacing:.07em;color:rgba(94,28,10,.42);transition:color .45s}
+#menu .mi .t span{display:inline-block;transform:translateY(105%);opacity:0;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .5s}
+#menu.on .mi .t span{transform:none;opacity:1}
+#menu .mi .s{display:block;font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.3em;color:rgba(255,246,235,.62);margin-top:9px;opacity:0;transition:opacity .5s .5s}
+#menu.on .mi .s{opacity:1}
+#menu .mi:hover .t,#menu .mi:focus-visible .t,#menu .mi[aria-current="true"] .t{color:#FFF}
+#menu .mi .dot{position:absolute;right:clamp(16px,5vw,70px);top:50%;transform:translateY(-50%) rotate(45deg);width:11px;height:11px;background:var(--paper);opacity:0;transition:opacity .4s}
+#menu .mi:hover .dot,#menu .mi[aria-current="true"] .dot{opacity:1}
+#menu .ft{position:absolute;left:0;right:0;bottom:22px;text-align:center;font:500 10px/1.9 "IBM Plex Mono",monospace;letter-spacing:.24em;color:rgba(255,246,235,.6);opacity:0;transition:opacity .5s .6s}
+#menu.on .ft{opacity:1}
+
+/* ========== views ========== */
+.view{display:none}.view.on{display:block}
+#main{opacity:0;transition:opacity .8s}#main.on{opacity:1}
+
+/* ---------- home hero ---------- */
+#track{height:460vh;position:relative}
+.stage{position:sticky;top:0;height:100svh;overflow:hidden;display:flex;flex-direction:column}
+.htitle{flex:0 0 auto;text-align:center;padding:clamp(74px,11vh,116px) 20px 0;pointer-events:none}
+.htitle h1{font-size:clamp(38px,6.6vw,78px);letter-spacing:.2em;margin-left:.2em;color:var(--ink);line-height:1}
+.htitle p{font-family:"Gowun Batang",serif;font-size:clamp(13px,1.9vw,18px);color:var(--amber);margin:14px auto 0;letter-spacing:.06em}
+.hcore{flex:1 1 auto;position:relative;min-height:0;overflow:hidden}
+.blob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+ height:62%;aspect-ratio:1/.94;width:auto;max-width:62vw;
+ background:var(--deep);
+ background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.09) 0 2px,transparent 2px 4px),
+  repeating-linear-gradient(90deg,rgba(255,228,190,.045) 0 1px,transparent 1px 3px),
+  radial-gradient(86% 76% at 32% 24%,rgba(255,206,150,.14),transparent 62%);
+ border-radius:47% 53% 50% 50%/49% 44% 56% 51%;filter:url(#rough2)}
+.ringw{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:92%;aspect-ratio:1;width:auto;max-width:86vw;pointer-events:none}
+.ringw svg{width:100%;height:100%;animation:spin 58s linear infinite}
+.ringw text{font-family:"Gowun Batang",serif;font-size:27px;fill:var(--amber)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.railw{position:absolute;inset:0;display:flex;align-items:center;overflow:hidden}
+.rail{display:flex;align-items:center;height:56%;will-change:transform}
+.obj{flex:0 0 auto;height:100%;width:min(42vw,230px);margin:0 min(7vw,48px);transition:opacity .55s}
+.obj svg{width:100%;height:100%;display:block;filter:url(#rough) drop-shadow(0 22px 30px rgba(60,26,10,.34))}
+.obj.tch{transform:translateZ(0)}
+.hcore .blob{z-index:0}.hcore .ringw{z-index:1}.hcore .railw{z-index:2}
+.obj.tch svg{filter:none;overflow:visible}
+.hfoot{flex:0 0 auto;text-align:center;padding:0 20px clamp(18px,3vh,30px)}
+.ocap{min-height:28px}
+.ocap b{display:block;font-family:"Gowun Batang",serif;font-size:clamp(15px,2vw,19px);color:var(--ink)}
+.hint{font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.3em;color:var(--mut);margin-top:14px}
+.hint i{display:block;width:1px;height:22px;background:var(--line);margin:10px auto 0;animation:drip 2.2s infinite}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}45%{transform:scaleY(1);transform-origin:top}55%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media(max-width:700px){
+ .htitle{padding-top:clamp(64px,9vh,88px)}
+ .blob{height:auto;width:min(74vw,300px);max-width:none}
+ .ringw{height:auto;width:min(94vw,372px);max-width:none}
+ .ringw text{font-size:31px}
+ .rail{height:auto}
+ .obj{height:auto;width:min(54vw,196px);margin:0 12vw}
+ .obj svg{height:auto}
+ .hfoot{padding-bottom:16px}
+}
+
+/* ---------- full-screen chooser (home) ---------- */
+.bigmenu{position:relative;min-height:100svh}
+.bmflood{position:absolute;inset:0;background:var(--amber);display:flex;flex-direction:column;justify-content:center;
+ clip-path:inset(0 0 100% 0);transition:clip-path 1s cubic-bezier(.76,0,.24,1)}
+.bigmenu.in .bmflood{clip-path:inset(0 0 0 0)}
+.bm{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}
+.bigmenu.in .bm{opacity:1;transform:none}
+.bigmenu.in .bm:nth-of-type(1){transition-delay:.42s}
+.bigmenu.in .bm:nth-of-type(2){transition-delay:.54s}
+.bigmenu.in .bm:nth-of-type(3){transition-delay:.66s}
+.bigmenu.in .bm:nth-of-type(4){transition-delay:.78s}
+.bm{display:block;width:100%;text-align:center;position:relative;
+ border-top:1px solid rgba(94,28,10,.3);padding:clamp(16px,3.6vh,40px) clamp(50px,9vw,110px)}
+.bm:last-of-type{border-bottom:1px solid rgba(94,28,10,.3)}
+.bm .t{display:block;font-family:"Gowun Batang",serif;font-weight:700;font-size:clamp(36px,min(8vw,9vh),96px);
+ line-height:1.04;letter-spacing:.08em;color:rgba(255,246,235,.82);transition:color .4s,letter-spacing .5s}
+.bm .s{display:block;font-size:14.5px;color:rgba(255,246,235,.72);margin-top:12px;transition:opacity .4s}
+.bm .dot{position:absolute;right:clamp(16px,5vw,74px);top:50%;transform:translateY(-50%) rotate(45deg);
+ width:11px;height:11px;background:var(--paper);opacity:0;transition:opacity .4s}
+.bm:hover .t,.bm:focus-visible .t{color:#FFF6EB;letter-spacing:.14em}
+.bm:hover .dot,.bm:focus-visible .dot{opacity:1}
+@media(max-width:620px){.bm{padding-left:22px;padding-right:22px}.bm .s{font-size:13px}.bm .dot{display:none}}
+
+/* ---------- index rows (inner pages) ---------- */
+.idx{border-top:1px solid var(--line)}
+.ir{display:block;width:100%;border-bottom:1px solid var(--line);padding:clamp(22px,4.4vh,44px) 26px;position:relative;text-align:left}
+.ir .in{max-width:1160px;margin:0 auto;display:flex;align-items:baseline;gap:clamp(14px,3vw,40px)}
+.ir .n{font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.22em;color:var(--mut);flex:0 0 auto}
+.ir .t{font-family:"Gowun Batang",serif;font-size:clamp(32px,6.6vw,76px);letter-spacing:.07em;line-height:1.05;transition:transform .55s cubic-bezier(.3,0,.2,1)}
+.ir .d{margin-left:auto;font-size:14px;color:var(--mut);text-align:right;max-width:28ch;flex:0 1 auto}
+.ir::after{content:"";position:absolute;inset:0;background:var(--ink);transform:scaleY(0);transform-origin:bottom;transition:transform .55s cubic-bezier(.76,0,.24,1);z-index:-1}
+.ir{z-index:0}
+.ir:hover::after,.ir:focus-visible::after{transform:scaleY(1);transform-origin:top}
+.ir:hover .t,.ir:focus-visible .t{color:var(--paper);transform:translateX(16px)}
+.ir:hover .n,.ir:hover .d,.ir:focus-visible .n,.ir:focus-visible .d{color:rgba(255,255,255,.55)}
+@media(max-width:760px){.ir .d{display:none}}
+.nx.two{display:grid;grid-template-columns:1fr 1fr}
+.nx.two .ir:first-child{border-right:1px solid var(--line)}
+.ir.nxt .in{flex-direction:row-reverse}
+.ir.nxt:hover .t,.ir.nxt:focus-visible .t{transform:translateX(-16px)}
+@media(max-width:700px){.nx.two{grid-template-columns:1fr}.nx.two .ir:first-child{border-right:0}}
+
+/* ---------- page head ---------- */
+.ph{padding:clamp(120px,20vh,210px) 0 clamp(50px,8vh,86px);border-bottom:1px solid var(--line)}
+.ph .wrap{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end}
+.ph h2{font-size:clamp(46px,11vw,132px);letter-spacing:.09em;line-height:.98}
+.ph .en{font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.34em;color:var(--mut);margin-bottom:16px}
+.ph p{color:var(--mut);font-size:15.5px;max-width:34ch;text-align:right}
+@media(max-width:760px){.ph .wrap{grid-template-columns:1fr}.ph p{text-align:left;max-width:none}}
+
+section{padding:clamp(56px,9vh,92px) 0}
+section+section{border-top:1px solid var(--line)}
+.hd{display:grid;grid-template-columns:116px 1fr;gap:26px;align-items:start;margin-bottom:36px}
+.hd h3{font-size:clamp(23px,3.2vw,36px)}
+.hd .sb{color:var(--mut);margin-top:11px;font-size:15.5px}
+.hd.solo{grid-template-columns:1fr}
+@media(max-width:700px){.hd{grid-template-columns:1fr;gap:9px}}
+.rv{opacity:0;transform:translateY(22px);transition:opacity .9s,transform .9s}.rv.in{opacity:1;transform:none}
+.ri{display:block;overflow:hidden}
+.ri i{display:block;font-style:normal;transform:translateY(106%);transition:transform .95s cubic-bezier(.2,.8,.2,1)}
+.rv.in .ri i{transform:none}
+.ph h2 .ri i{transform:translateY(106%)}
+.view.on .ph h2 .ri i{animation:rise 1s cubic-bezier(.2,.8,.2,1) .12s forwards}
+@keyframes rise{to{transform:none}}
+.g4.rv,.g3.rv,.ax.rv,.tones.rv{opacity:1;transform:none}
+.g4.rv>div,.g3.rv>div,.ax.rv>div,.tones.rv>div{opacity:0;transform:translateY(20px);
+ transition:opacity .75s,transform .75s,background .4s,color .4s}
+.g4.rv.in>div,.g3.rv.in>div,.ax.rv.in>div,.tones.rv.in>div{opacity:1;transform:none}
+.g4.rv.in>div:nth-child(2),.g3.rv.in>div:nth-child(2),.ax.rv.in>div:nth-child(2),.tones.rv.in>div:nth-child(2){transition-delay:.09s}
+.g4.rv.in>div:nth-child(3),.g3.rv.in>div:nth-child(3),.ax.rv.in>div:nth-child(3),.tones.rv.in>div:nth-child(3){transition-delay:.18s}
+.g4.rv.in>div:nth-child(4),.ax.rv.in>div:nth-child(4){transition-delay:.27s}
+.ax.rv.in>div:nth-child(5){transition-delay:.36s}
+ul.b.rv.in li{animation:rise2 .8s both}
+@keyframes rise2{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+ul.b.rv.in li:nth-child(2){animation-delay:.08s}
+ul.b.rv.in li:nth-child(3){animation-delay:.16s}
+ul.b.rv.in li:nth-child(4){animation-delay:.24s}
+ul.b.rv.in li:nth-child(5){animation-delay:.32s}
+.pull{font-family:"Gowun Batang",serif;font-size:clamp(32px,7vw,78px);line-height:1.38;margin:0;letter-spacing:.02em}
+.pull em{font-style:normal;display:block;overflow:hidden}
+.pull em i{display:block;font-style:normal;transform:translateY(105%);transition:transform .95s cubic-bezier(.2,.8,.2,1)}
+.pull.in em i{transform:none}
+.pull.in em:nth-child(2) i{transition-delay:.17s}.pull.in em:nth-child(3) i{transition-delay:.34s}
+
+.g4,.g3{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+.g4>div,.g3>div{background:var(--paper);padding:25px 21px;transition:background .4s,color .4s}
+.g4>div:hover,.g3>div:hover{background:var(--ink);color:var(--paper)}
+.g4>div:hover *,.g3>div:hover *{color:inherit!important}
+.g4 .n,.g3 .n{font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:var(--mut)}
+.g4 h4,.g3 h4{font-size:19px;margin:11px 0 9px}
+.g4 p,.g3 p{font-size:14.5px;color:var(--mut);margin:0 0 8px;line-height:1.72}
+.ex{font:400 12.5px/1.6 "IBM Plex Mono",monospace;color:var(--mut)}
+@media(max-width:900px){.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.g4,.g3{grid-template-columns:1fr}}
+/* 방 해부도 */
+.anat{display:grid;grid-template-columns:1.08fr .92fr;gap:clamp(22px,3.4vw,42px);align-items:center}
+.anatsc{position:relative;aspect-ratio:10/7;background:#20160F;overflow:hidden}
+.anatsc>svg{width:100%;height:100%;display:block}
+.anatsc::after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(0deg,rgba(255,238,206,.045) 0 2px,transparent 2px 4px),
+  radial-gradient(126% 106% at 50% 46%,transparent 48%,rgba(12,7,3,.58) 100%)}
+.hot{position:absolute;width:30px;height:30px;transform:translate(-50%,-50%);border-radius:50%;
+ border:1px solid rgba(248,242,231,.45);background:rgba(18,11,6,.5);display:grid;place-items:center;z-index:2;transition:.35s}
+.hot i{width:7px;height:7px;border-radius:50%;background:rgba(248,242,231,.7);transition:.35s}
+.hot::before{content:"";position:absolute;inset:-5px;border-radius:50%;border:1px solid var(--amber);opacity:0}
+.hot:hover{border-color:#F8F2E7}
+.hot.on{border-color:var(--amber);background:var(--amber)}
+.hot.on i{background:#FFF6EB}
+.hot.on::before{opacity:1;animation:ring 1.8s infinite}
+@keyframes ring{0%{transform:scale(.85);opacity:.85}100%{transform:scale(1.5);opacity:0}}
+.anl{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.anl li{border-bottom:1px solid var(--line)}
+.anl button{width:100%;text-align:left;padding:15px 2px;display:block}
+.anl b{display:block;font-family:"Gowun Batang",serif;font-size:19px;transition:color .35s}
+.anl p{font-size:14.5px;color:var(--mut);margin:0;line-height:1.7;
+ max-height:0;opacity:0;overflow:hidden;transition:max-height .5s,opacity .4s,margin .5s}
+.anl li.on b{color:var(--amber)}
+.anl li.on p{max-height:120px;opacity:1;margin-top:8px}
+@media(max-width:820px){.anat{grid-template-columns:1fr}
+ .anl p{max-height:none;opacity:1;margin-top:8px}
+ .anl li.on p{max-height:none}}
+/* 색 규칙 */
+.rule{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:22px}
+.rule>div{background:var(--paper);padding:18px 20px}
+.rule span{font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.22em;color:var(--mut)}
+.rule b{display:block;font-family:"Gowun Batang",serif;font-size:21px;margin:9px 0 4px}
+.rule i{font-style:normal;font-size:13.5px;color:var(--mut)}
+@media(max-width:620px){.rule{grid-template-columns:1fr}}
+.tplay{display:grid;grid-template-columns:1.12fr .88fr;gap:clamp(20px,3vw,36px);align-items:stretch}
+.tsc{position:relative;overflow:hidden;background:#20160F;min-height:290px}
+.tsc svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tsc::after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(0deg,rgba(255,238,206,.045) 0 2px,transparent 2px 4px),
+  radial-gradient(124% 104% at 50% 46%,transparent 50%,rgba(12,7,3,.52) 100%)}
+.tslate{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:11px 16px;
+ background:rgba(14,8,4,.82);color:#F8F2E7;font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.24em;
+ transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.tslate.on{transform:none}
+.tctl{display:flex;flex-direction:column;justify-content:center;gap:clamp(16px,2.6vh,24px)}
+.tc label{display:block;font-size:13px;color:var(--mut);margin-bottom:9px}
+.tc label b{color:var(--ink)}
+.tc i{display:block;font-style:normal;font-size:13px;color:var(--mut);margin-top:9px;line-height:1.65}
+.tc i b{font-weight:500;color:var(--amber)}
+.tnote{font-size:14.5px;line-height:1.75;margin:0;padding-top:16px;border-top:1px solid var(--line);min-height:5.3em}
+@media(max-width:820px){.tplay{grid-template-columns:1fr;align-items:start}
+ .tsc{aspect-ratio:16/10;min-height:210px}
+ .tnote{order:-1;padding-top:0;padding-bottom:16px;border-top:0;border-bottom:1px solid var(--line);min-height:0}}
+
+/* the judgement demo, pinned full screen */
+#ptrack{position:relative}
+@media(min-width:861px){
+ #ptrack{height:calc(100svh + 85svh)}
+ #ptrack .pstage{position:sticky;top:0}
+}
+.pstage{position:relative;height:100svh;min-height:720px;overflow:hidden;background:#20160F}
+.pstage>svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pscrim{position:absolute;inset:0;background:linear-gradient(270deg,rgba(26,16,9,.94) 0%,rgba(26,16,9,.8) 30%,rgba(26,16,9,.1) 66%,rgba(26,16,9,.45) 100%)}
+.phead{position:absolute;left:clamp(22px,4vw,54px);top:clamp(78px,11vh,116px);z-index:3;color:var(--paper)}
+.phead b{display:block;font-family:"Gowun Batang",serif;font-size:clamp(24px,3.4vw,40px);letter-spacing:.04em;margin-top:10px}
+.ppan{position:absolute;right:0;top:0;bottom:0;z-index:3;width:min(430px,46vw);
+ padding:84px clamp(18px,2.4vw,30px) clamp(18px,3vh,30px);
+ display:flex;flex-direction:column;justify-content:flex-start;gap:clamp(8px,1.2vh,13px);overflow-y:auto}
+.ppan>*{flex:0 0 auto}
+.ppan .est,.ppan .rcpt{color:#3A2E22;border:0;position:relative;overflow:hidden;
+ background:#F4ECD8;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 80% at 18% 8%,rgba(255,255,255,.7),transparent 60%),
+  radial-gradient(90% 70% at 85% 95%,rgba(150,112,70,.22),transparent 65%);
+ filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));
+ clip-path:polygon(0 1.6%,7% 0,16% 1.4%,26% .2%,36% 1.6%,46% .3%,56% 1.5%,66% .2%,76% 1.6%,86% .4%,94% 1.5%,100% .3%,
+  100% 98.4%,94% 100%,86% 98.6%,76% 99.7%,66% 98.5%,56% 99.8%,46% 98.6%,36% 99.7%,26% 98.5%,16% 99.8%,7% 98.7%,0 100%)}
+.ppan .est::after,.ppan .rcpt::after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(90deg,rgba(90,66,40,.05) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.ppan .est{padding:15px 16px 17px;transform:rotate(-.7deg)}
+.ppan .rcpt{transform:rotate(.6deg)}
+.ppan .est .t{border-bottom:1px dashed #BFAF90}
+.ppan .est .row span:first-child,.ppan .rcpt .r span:first-child{color:#8A7355}
+.ppan .rcpt .r{border-bottom:1px dotted #C3B394}
+.ppan .rcpt .tot{border-bottom:0}
+.ppan .warnx{color:#A8492A}
+.ppan .est .t{padding-bottom:6px;margin-bottom:8px}
+.ppan .est .t b{font-size:16px}
+.ppan .row{font-size:12.5px;padding:2px 0;line-height:1.5}
+.ppan .ctl label{font-size:12.5px;margin-bottom:5px}
+.ppan .seg button{padding:7px 3px;font-size:12.5px}
+.ppan .rcpt{padding:15px 16px 18px;font-size:12px}
+.ppan .rcpt .r{padding:3px 0}
+
+.say{position:absolute;left:clamp(22px,4vw,54px);top:clamp(192px,26vh,250px);z-index:4;
+ width:min(420px,38vw);min-height:96px;background:#F7F0DE;color:#36291D;
+ border:2px solid #C6B693;border-radius:4px 20px 20px 20px;padding:16px 19px 17px;
+ font-family:"Gowun Batang",serif;font-weight:700;font-size:clamp(15px,1.35vw,18px);line-height:1.6;
+ box-shadow:0 10px 22px -12px rgba(0,0,0,.42);animation:pop .5s both}
+.say::before{content:"";position:absolute;top:-13px;left:18px;border:7px solid transparent;border-bottom-color:#C6B693}
+.say::after{content:"";position:absolute;top:-9px;left:20px;border:5px solid transparent;border-bottom-color:#F7F0DE}
+.say b{font-family:"IBM Plex Mono",monospace;font-weight:500}
+.say b{display:block;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.22em;color:#8A7355;margin-bottom:7px}
+.say.ok{border-color:#C98A4E;background:#FBF1DC}
+.say.ok b{color:#A8492A}
+.say.bad{border-color:#8FA3B4;background:#EFF1F0}
+.say.bad b{color:#5B7A91}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.ppan .ctl label{color:rgba(248,242,231,.82)}
+.ppan input[type=range]{accent-color:var(--amber)}
+.ppan .seg{border-color:rgba(248,242,231,.32)}
+.ppan .seg button{color:rgba(248,242,231,.72);border-right-color:rgba(248,242,231,.24)}
+.ppan .seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+@media(max-width:860px){
+ .pstage{height:auto;min-height:0}
+ .pstage>svg{position:relative;inset:auto;width:100%;height:46svh;min-height:250px}
+ .pstage::after{top:0;bottom:auto;height:46svh;min-height:250px}
+ .pscrim{top:0;bottom:auto;height:46svh;min-height:250px;
+  background:linear-gradient(180deg,rgba(26,16,9,.6) 0%,rgba(26,16,9,.06) 42%,rgba(26,16,9,.55) 100%)}
+ .phead{left:22px;top:clamp(72px,11vh,100px)}
+ .phead b{font-size:26px;margin-top:7px}
+ .pstage{display:flex;flex-direction:column;overflow:visible}
+ .pstage>svg{order:1}
+ .say{order:2;position:sticky;top:calc(64px + env(safe-area-inset-top,0px));
+  width:auto;margin:12px 22px 2px;min-height:0;z-index:6;font-size:14px;padding:13px 15px 14px;
+  box-shadow:0 8px 16px -10px rgba(0,0,0,.38)}
+ .ppan{order:3;position:relative;width:auto;inset:auto;padding:14px 22px 34px;overflow:visible;gap:12px}
+}
+.est{border:1px solid var(--line);padding:15px 17px;background:var(--paper)}
+.est .t{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:10px}
+.est .t b{font-family:"Gowun Batang",serif;font-size:17px}
+.row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0}
+.row span:first-child{color:var(--mut)}
+.ctl label{display:block;font-size:13px;color:var(--mut);margin-bottom:7px}
+input[type=range]{width:100%;accent-color:var(--ink);background:none}
+.seg{display:flex;border:1px solid var(--line)}
+.seg button{flex:1;border-right:1px solid var(--line);padding:9px 3px;font-size:13.5px;color:var(--mut)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.rcpt{background:var(--paper);border:1px solid var(--line);padding:15px 17px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.rcpt .r{display:flex;justify-content:space-between;border-bottom:1px dotted var(--line);padding:4px 0}
+.rcpt .tot{border-bottom:0;font-weight:500;padding-top:7px}
+
+.warnx{color:var(--amber)}.star{letter-spacing:.14em}
+
+
+.stam{display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:start}
+.gauge{height:10px;background:var(--line);margin:14px 0 6px;position:relative}
+.gauge i{position:absolute;inset:0 auto 0 0;background:var(--ink);transition:width .7s cubic-bezier(.3,0,.2,1)}
+.note{border-left:2px solid var(--ink);padding-left:15px;font-size:15px;color:var(--mut);min-height:86px}
+@media(max-width:760px){.stam{grid-template-columns:1fr;gap:22px}}
+
+/* ===== trial (playable demo) ===== */
+.trs{position:relative;height:100svh;min-height:680px;overflow:hidden;background:#20160F;color:var(--paper)}
+.trmap{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:pan-y;z-index:1}
+.trmap.drag{cursor:grabbing}
+.trs{-webkit-user-select:none;user-select:none}
+@media(max-width:860px){body.trial #bar{background:linear-gradient(rgba(18,11,6,.94) 55%,rgba(18,11,6,0));padding-bottom:26px}}
+.trmv{position:absolute;inset:-12%;transform:scale(1);will-change:transform}
+.trmv>svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.trob{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:24px;
+ background:rgba(18,11,6,.72);backdrop-filter:blur(3px);transition:opacity .45s}
+.trob.out{opacity:0;pointer-events:none}
+.trobc{width:min(460px,100%);color:#3A2E22;padding:24px 24px 22px;position:relative;
+ background:#F4ECD8;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 80% at 18% 8%,rgba(255,255,255,.7),transparent 60%),
+  radial-gradient(90% 70% at 85% 95%,rgba(150,112,70,.22),transparent 65%);
+ clip-path:polygon(0 1.2%,7% 0,16% 1%,26% .2%,36% 1.2%,46% .3%,56% 1.1%,66% .2%,76% 1.2%,86% .3%,94% 1.1%,100% .3%,
+  100% 98.8%,94% 100%,86% 98.9%,76% 99.8%,66% 98.8%,56% 99.8%,46% 98.9%,36% 99.8%,26% 98.8%,16% 99.8%,7% 98.9%,0 100%);
+ animation:pop .55s both}
+.trobc h4{font-family:"Gowun Batang",serif;font-size:clamp(21px,2.6vw,26px);margin:10px 0 16px}
+.trobc ol{list-style:none;margin:0 0 14px;padding:0;counter-reset:s}
+.trobc li{counter-increment:s;position:relative;padding:10px 0 10px 38px;border-top:1px dashed #BFAF90;opacity:0;animation:fin .45s forwards}
+.trobc li:nth-child(1){animation-delay:.2s}.trobc li:nth-child(2){animation-delay:.32s}
+.trobc li:nth-child(3){animation-delay:.44s}.trobc li:nth-child(4){animation-delay:.56s}
+.trobc li::before{content:counter(s);position:absolute;left:0;top:10px;width:24px;height:24px;border-radius:50%;
+ border:1.5px solid #A8492A;color:#A8492A;font:500 12px/21px "IBM Plex Mono",monospace;text-align:center}
+.trobc li b{display:block;font-family:"Gowun Batang",serif;font-size:15px}
+.trobc li span{display:block;font-size:13px;color:#7E6A4E;line-height:1.6;margin-top:2px}
+.trrule{width:100%;border-collapse:collapse;margin:0 0 18px;font-size:12px;opacity:0;animation:fin .45s .7s forwards}
+.trrule th{text-align:left;font-weight:500;color:#3A2E22;padding:6px 8px 6px 0;border-top:1px dotted #C3B394;white-space:nowrap}
+.trrule td{color:#A8492A;padding:6px 0;border-top:1px dotted #C3B394;text-align:right}
+.trobc{max-height:calc(100svh - 40px);overflow-y:auto}
+.trplay{width:100%;font:700 16px "IBM Plex Mono",monospace;letter-spacing:.3em;padding:14px 12px}
+.trmenu{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;
+ display:none;align-items:center;gap:9px;padding:10px 20px;border-radius:30px;
+ background:rgba(18,11,6,.82);border:1px solid rgba(248,242,231,.4);color:#F8F2E7;
+ font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.24em;backdrop-filter:blur(6px);transition:.3s}
+.trmenu i{display:block;width:14px;height:9px;border-top:1.5px solid currentColor;border-bottom:1.5px solid currentColor;position:relative}
+.trmenu i::after{content:"";position:absolute;left:0;right:0;top:2.5px;border-top:1.5px solid currentColor}
+.trmenu:hover{background:var(--amber);border-color:var(--amber)}
+body.trial .trmenu{display:flex}
+body.trial footer{display:none}
+.mg{margin-top:4px}
+.mgh{font-size:12px!important;color:#7E6A4E!important;text-align:center;margin:10px 0 8px!important}
+.mgh b{color:#A8492A}
+.mgx{width:100%;padding:8px!important;font-size:12px!important;border-color:#BFAF90!important;color:#8A7355!important;background:none!important}
+.mgx:hover{background:#3A2E22!important;color:#F4ECD8!important}
+.rc3w{perspective:700px;height:150px;cursor:grab;touch-action:none;user-select:none}
+.rc3w:active{cursor:grabbing}
+.rc3{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .35s}
+.fc{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;
+ text-align:center;padding:14px;border:1.5px solid #BFAF90;background:rgba(255,250,236,.75)}
+.fc i{font-style:normal;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:#8A7355;margin-top:8px}
+.fc.fr b{font-family:"Gowun Batang",serif;font-size:20px}
+.fc.bk{transform:rotateY(180deg);background:#EFE4C9}
+.fc.bk i{margin:0 0 8px}
+.fc.bk span{font-family:"Gowun Batang",serif;font-size:14px;line-height:1.6;color:#A8492A}
+.wpw{position:relative;height:140px;overflow:hidden;background:linear-gradient(#CFE6EE,#F3F8F9);touch-action:none}
+.wpw canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:1}
+.wpl{position:absolute;inset:0;display:grid;place-items:center;font-family:"Gowun Batang",serif;font-size:16px;color:#4E6E8E}
+.hold{position:relative;width:100%;height:56px;overflow:hidden;border:1.5px solid #3A2E22;background:rgba(255,255,255,.3);
+ font-family:"Gowun Batang",serif;font-size:16px;color:#3A2E22;touch-action:none;user-select:none}
+.hold i{position:absolute;inset:0;background:rgba(192,120,60,.5);transform:scaleX(0);transform-origin:left}
+.hold span{position:relative;z-index:1;color:#3A2E22}
+.hold.warn{border-color:#A8492A}.hold.warn i{background:rgba(168,73,42,.55)}
+.mgdone{width:100%;margin-bottom:7px;animation:pop .4s both}
+.trnote{font-size:11.5px!important;color:#5C4A36!important;background:rgba(120,92,58,.1);padding:7px 9px;margin:0 0 8px!important;line-height:1.55!important}
+.trnote.warn{color:#A8492A!important;background:rgba(168,73,42,.09)}
+.trdone{font-size:13px!important;color:#3A2E22!important;padding:9px 0 2px;margin:0!important}
+.trb.danger{border-color:#A8492A;color:#A8492A}
+.trb.danger:hover{background:#A8492A;color:#F4ECD8}
+/* unfold */
+.ufw{position:relative;height:160px;border:1px dashed #BFAF90;overflow:hidden;touch-action:none}
+.ufp{position:absolute;left:12%;right:12%;bottom:10px;height:calc(100% - 20px);transform-origin:bottom;
+ background:#FBF5E4;border:1px solid #C6B693;display:grid;place-items:center;padding:12px;text-align:center;
+ background-image:repeating-linear-gradient(0deg,transparent 0 22px,rgba(150,120,80,.18) 22px 23px)}
+.ufp span{font-family:"Gowun Batang",serif;font-size:14px;line-height:1.6;color:#A8492A}
+.ufh{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:54px;height:26px;border-radius:13px 13px 0 0;
+ background:#3A2E22;color:#F4ECD8;display:grid;place-items:center;font-size:11px;cursor:ns-resize;touch-action:none}
+/* peel */
+.pls{position:relative;height:150px;cursor:pointer;user-select:none}
+.pl{position:absolute;left:10%;right:10%;top:calc(10px + var(--i)*4px);bottom:calc(16px - var(--i)*4px);
+ background:#FBF5E4;border:1px solid #C6B693;display:grid;place-items:center;padding:10px;text-align:center;
+ transform:rotate(calc(var(--i)*2.2deg - 3deg));transition:transform .45s cubic-bezier(.3,0,.2,1),opacity .45s;
+ box-shadow:0 4px 10px -6px rgba(0,0,0,.4);z-index:calc(10 - var(--i))}
+.pl em{font:500 11px/1 "IBM Plex Mono",monospace;color:#8A7355;letter-spacing:.12em;font-style:normal}
+.pl span{font-family:"Gowun Batang",serif;font-size:14px;line-height:1.6;color:#A8492A}
+.pl.gone{transform:translate(120%,-30%) rotate(24deg);opacity:0}
+/* loupe */
+.lpw{position:relative;height:150px;border:1px solid #C6B693;background:#FBF5E4;overflow:hidden;cursor:none;touch-action:none}
+.lpb,.lpc{position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;line-height:1.75;font-size:13px}
+.lpb{filter:blur(4px);color:#7E6A4E}
+.lpb i,.lpc i{font-style:normal;text-decoration:line-through;text-decoration-thickness:2px}
+.lpc{color:#3A2E22;background:#FBF5E4;clip-path:circle(0 at 50% 50%)}
+.lpc i{color:#A8492A}
+.lpr{position:absolute;width:68px;height:68px;margin:-34px 0 0 -34px;border:3px solid #3A2E22;border-radius:50%;pointer-events:none;opacity:0;
+ box-shadow:0 0 0 2px rgba(255,255,255,.6) inset}
+.lpr::after{content:"";position:absolute;right:-16px;bottom:-12px;width:22px;height:5px;background:#3A2E22;transform:rotate(40deg);border-radius:3px}
+.lpw.found .lpb{filter:none}.lpw.found .lpc{clip-path:none!important}
+/* drop */
+.dpw{position:relative;height:130px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;touch-action:none}
+.dpi{position:relative;z-index:2;padding:14px 16px;background:#FBF5E4;border:1.5px solid #3A2E22;font-family:"Gowun Batang",serif;font-size:14px;
+ cursor:grab;user-select:none;touch-action:none;box-shadow:0 8px 16px -10px rgba(0,0,0,.5)}
+.dpi.on{cursor:grabbing;box-shadow:0 16px 26px -12px rgba(0,0,0,.6)}
+.dpt{width:44%;height:100%;border:2px dashed #8A7355;display:grid;place-items:center;align-content:center;gap:4px;text-align:center;transition:.2s}
+.dpt b{font-family:"Gowun Batang",serif;font-size:15px}.dpt i{font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:#8A7355;font-style:normal}
+.dpt.bin{border-color:#A8492A}.dpt.bin b{color:#A8492A}
+.dpt.over{background:rgba(168,73,42,.14);transform:scale(1.04)}
+/* tap */
+.tpw{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0}
+.tpb{width:96px;height:96px;border-radius:50%;border:2px solid #3A2E22;background:rgba(255,255,255,.35);font-family:"Gowun Batang",serif;font-size:16px;color:#3A2E22;touch-action:manipulation}
+.tpb.bump{animation:bump .25s}
+@keyframes bump{50%{transform:scale(.9)}}
+.tpd{display:flex;gap:7px}.tpd i{width:10px;height:10px;border-radius:50%;border:1.5px solid #8A7355}.tpd i.on{background:#A8492A;border-color:#A8492A}
+.stk{display:flex;flex-direction:column-reverse;align-items:center;gap:2px;min-height:4px}
+.stk span{display:block;width:90px;height:9px;background:#8A6B46;border-radius:1px;transform:rotate(var(--r));animation:fin .25s both}
+/* fold */
+.fdw{position:relative;height:140px;border:1px dashed #BFAF90;display:grid;place-items:center;touch-action:none;cursor:ew-resize}
+.fdc{width:90%;height:100%;max-height:120px;background:#7C8A72;border-radius:4px;transition:width .3s,height .3s;
+ background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 3px,transparent 3px 9px)}
+.trcl ul{list-style:none;margin:0;padding:0}
+.trcl li{padding:7px 0;border-bottom:1px dotted #C3B394;font-size:12.5px;line-height:1.5}
+.trcl li:last-child{border-bottom:0}
+.trcl li b{display:block;font-family:"Gowun Batang",serif;font-size:13.5px;color:#9A8767}
+.trcl li span{display:block;color:#9A8767}
+.trcl li.got b{color:#3A2E22}
+.trcl li.got span{color:#A8492A}
+.trlogbtn{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 13px;
+ border:1px solid rgba(248,242,231,.32);background:rgba(18,11,6,.55);color:#F8F2E7;font-size:13px}
+.trlogbtn b{font:500 11px/1 "IBM Plex Mono",monospace;letter-spacing:.16em;background:var(--amber);color:#FFF6EB;padding:4px 8px;border-radius:12px}
+.trlogbtn:hover{border-color:#F8F2E7}
+.trhist{list-style:none;margin:0;padding:0;max-height:220px;overflow-y:auto}
+.trhist li{display:flex;gap:9px;padding:7px 0;border-bottom:1px dotted #C3B394;font-size:12.5px;line-height:1.55}
+.trhist li:last-child{border-bottom:0}
+.trhist em{flex:0 0 auto;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.12em;padding:4px 6px;border:1px solid currentColor;height:fit-content;margin-top:2px}
+.trhist .c em{color:#A8492A}.trhist .g em{color:#5C4A36}.trhist .k em{color:#4E6E8E}.trhist .x em{color:#A8492A;background:rgba(168,73,42,.1)}
+.trhist .none{color:#8A7355}
+.trhot{z-index:3}
+.trhot g{cursor:pointer}
+.trhot .ht{fill:rgba(0,0,0,0)}
+.trhot .hc{fill:rgba(18,11,6,.55);stroke:rgba(248,242,231,.75);stroke-width:1.6}
+.trhot .hd{fill:#F8F2E7}
+.trhot .hr{fill:none;stroke:var(--amber);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.trhot g:hover .hc,.trhot g.sel .hc{fill:var(--amber);stroke:#FFF6EB}
+.trhot g.sel .hr{opacity:1;animation:ring 1.6s infinite}
+.trhot g.done .hc{fill:rgba(18,11,6,.35);stroke:rgba(248,242,231,.35)}
+.trhot g.done .hd{fill:rgba(248,242,231,.45)}
+.trhot text{fill:#FFF6EB;font:700 11.5px "Gowun Batang",serif;paint-order:stroke;stroke:rgba(14,8,4,.9);stroke-width:3.2px;pointer-events:none;opacity:0;transition:opacity .25s}
+.trhot g:hover text,.trhot g.sel text{opacity:1}
+.trscrim{background:linear-gradient(270deg,rgba(26,16,9,.94) 0%,rgba(26,16,9,.78) 30%,rgba(26,16,9,.06) 62%,rgba(26,16,9,.4) 100%)!important;pointer-events:none;z-index:2}
+.trhd{position:absolute;left:clamp(22px,4vw,54px);top:clamp(78px,11vh,116px);z-index:4;pointer-events:none}
+.trhd b{display:block;font-family:"Gowun Batang",serif;font-size:clamp(24px,3.4vw,40px);margin-top:10px}
+.trsay{z-index:5}
+.trsay:empty{display:none}
+.trpan{position:absolute;right:0;top:0;bottom:0;z-index:4;width:min(440px,46vw);
+ padding:84px clamp(18px,2.4vw,30px) 78px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.trpan>*{flex:0 0 auto}
+.trpan .paper{color:#3A2E22;position:relative;overflow:hidden;padding:15px 16px 17px;font-size:12.5px;
+ background:#F4ECD8;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 80% at 18% 8%,rgba(255,255,255,.7),transparent 60%),
+  radial-gradient(90% 70% at 85% 95%,rgba(150,112,70,.22),transparent 65%);
+ clip-path:polygon(0 1.6%,7% 0,16% 1.4%,26% .2%,36% 1.6%,46% .3%,56% 1.5%,66% .2%,76% 1.6%,86% .4%,94% 1.5%,100% .3%,
+  100% 98.4%,94% 100%,86% 98.6%,76% 99.7%,66% 98.5%,56% 99.8%,46% 98.6%,36% 99.7%,26% 98.5%,16% 99.8%,7% 98.7%,0 100%);
+ animation:fin .4s both}
+.trpan .paper h5{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;padding-bottom:8px;
+ border-bottom:1px dashed #BFAF90;font-family:"Gowun Batang",serif;font-size:16px}
+.trpan .paper h5 span{font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:#8A7355}
+.trpan .paper p{margin:0 0 8px;line-height:1.65;color:#5C4A36;max-width:none}
+.trpan .paper .row{font-size:12.5px;padding:2px 0}
+.trpan .paper .row span:first-child{color:#8A7355}
+.trst{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(248,242,231,.18);border:1px solid rgba(248,242,231,.18)}
+.trst div{background:rgba(18,11,6,.7);padding:9px 11px}
+.trst span{display:block;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.18em;color:rgba(248,242,231,.6)}
+.trst b{display:block;font-family:"Gowun Batang",serif;font-size:19px;margin-top:6px}
+.trst b.low{color:#E0835A}
+.trst i{display:block;height:4px;background:rgba(248,242,231,.18);margin-top:7px}
+.trst i em{display:block;height:100%;background:var(--amber);transition:width .5s}
+.trbtns{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.trb{flex:1 1 auto;padding:10px 12px;border:1px solid #3A2E22;color:#3A2E22;font-size:13px;background:rgba(255,255,255,.25);transition:.25s}
+.trb:hover{background:#3A2E22;color:#F4ECD8}
+.trb small{display:block;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.12em;opacity:.7;margin-top:4px}
+.trb[disabled]{opacity:.38;pointer-events:none}
+.trb.pri{background:#3A2E22;color:#F4ECD8}
+.trb.pri:hover{background:#A8492A;border-color:#A8492A}
+.trclue{font-size:12px;color:#A8492A;font-weight:500}
+.trlog{font-size:12px;color:rgba(248,242,231,.66);line-height:1.6;min-height:1.6em}
+.trend{display:flex;gap:7px;flex-wrap:wrap}
+.trend .trb{border-color:rgba(248,242,231,.5);color:#F8F2E7;background:rgba(18,11,6,.4)}
+.trend .trb:hover{background:#F8F2E7;color:#2B211A}
+.trend .trb.pri{background:var(--amber);border-color:var(--amber);color:#FFF6EB}
+@media(max-width:860px){
+ .trs{height:auto;min-height:0;display:flex;flex-direction:column;overflow:visible}
+ .trmap{position:relative;inset:auto;height:50svh;min-height:280px;order:1;flex:0 0 auto}
+ .trscrim{top:0;bottom:auto;height:50svh;min-height:280px;
+  background:linear-gradient(180deg,rgba(26,16,9,.6) 0%,rgba(26,16,9,.05) 40%,rgba(26,16,9,.5) 100%)!important}
+ .trhd{left:22px;top:72px}.trhd b{font-size:24px}
+ .trsay{order:2;position:sticky;top:calc(64px + env(safe-area-inset-top,0px));width:auto;margin:12px 22px 2px;min-height:0;font-size:14px;padding:13px 15px 14px;left:auto}
+ .trpan{order:3;position:relative;width:auto;inset:auto;padding:14px 22px 90px;overflow:visible}
+ .trob{position:fixed}
+ .trhot text{font-size:13.5px}
+ .trhot .hc{r:13px}
+ .trhot .ht{r:30px}
+}
+.trtm{position:fixed;left:50%;top:calc(11px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:59;
+ display:none;align-items:center;gap:9px;padding:7px 15px 8px;border-radius:30px;
+ background:rgba(18,11,6,.82);border:1px solid rgba(248,242,231,.3);color:#F8F2E7;backdrop-filter:blur(3px)}
+.trtm.on{display:flex}
+.trtm span{font:500 9px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:rgba(248,242,231,.6)}
+.trtm b{font:500 15px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;min-width:44px;text-align:center}
+.trtm i{display:block;width:62px;height:3px;background:rgba(248,242,231,.22)}
+.trtm i em{display:block;height:100%;background:var(--amber);transition:width .25s linear}
+.trtm.warn{border-color:var(--amber)}
+.trtm.warn b{color:#E0835A;animation:bump .9s infinite}
+.tres .trobc{text-align:left}
+.esr{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:9px 0;border-top:1px dashed #BFAF90;line-height:1.5;
+ opacity:0;animation:fin .45s forwards}
+.esr:nth-of-type(1){animation-delay:.18s}.esr:nth-of-type(2){animation-delay:.3s}
+.esr:nth-of-type(3){animation-delay:.42s}.esr:nth-of-type(4){animation-delay:.54s}
+.esr span:first-child{color:#8A7355;white-space:nowrap}
+.esr b{font-weight:500;text-align:right}
+.esdm{font-family:"Gowun Batang",serif;font-size:14.5px!important;color:#5C4A36;margin:14px 0 16px!important;
+ padding-left:12px;border-left:2px solid #C0562B;opacity:0;animation:fin .5s .66s forwards}
+.esmk{position:absolute;right:20px;top:18px;width:74px;height:74px;border:2px solid #C0562B;border-radius:50%;
+ display:grid;place-items:center;color:#C0562B;font:500 11px/1.35 "IBM Plex Mono",monospace;letter-spacing:.1em;text-align:center;
+ font-style:normal;transform:rotate(-12deg) scale(1.9);opacity:0;animation:stmp .5s .95s forwards}
+/* ---------- trial ending ---------- */
+.tre{position:fixed;inset:0;z-index:68;display:none;overflow-y:auto;overscroll-behavior:contain;
+ background:#F4ECD8;color:#3A2E22;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.045) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 70% at 20% 0%,rgba(255,255,255,.8),transparent 62%),
+  radial-gradient(100% 80% at 92% 100%,rgba(150,112,70,.28),transparent 66%)}
+.tre.on{display:block;animation:tefade .9s both}
+@keyframes tefade{from{opacity:0}to{opacity:1}}
+.tre .lab{display:block;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.24em;color:#8A7355}
+.tew{max-width:1000px;margin:0 auto;padding:clamp(76px,12vh,120px) clamp(20px,5vw,38px) 110px;position:relative}
+.tew>*{opacity:0;animation:teup .8s both}
+@keyframes teup{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.teh{text-align:center;animation-delay:.15s}
+.teh h3{font-family:"Gowun Batang",serif;font-size:clamp(27px,5vw,44px);margin:11px 0 0;line-height:1.25}
+.tegrid{display:grid;grid-template-columns:232px 1fr;gap:clamp(18px,3vw,34px);align-items:center;
+ margin:clamp(26px,5vh,50px) 0 0;animation-delay:.5s}
+.tefc{display:block;width:100%;height:auto;filter:url(#rough) drop-shadow(0 16px 24px rgba(90,46,18,.2))}
+.tefig{position:relative}
+.tefig .nm{display:block;text-align:center;font:500 9.5px/1.6 "IBM Plex Mono",monospace;letter-spacing:.16em;color:#8A7355;margin-top:6px}
+.tebub{position:relative;background:#FBF5E6;border:1px solid #D9C9A8;padding:19px 22px 20px;
+ box-shadow:0 14px 30px -18px rgba(70,44,18,.5);opacity:0;animation:teup .8s 1.15s both;
+ clip-path:polygon(0 1.2%,8% 0,18% 1%,30% .2%,42% 1.2%,54% .2%,66% 1.1%,78% .2%,88% 1.2%,100% .4%,
+  100% 98.8%,90% 100%,78% 98.9%,66% 99.8%,54% 98.8%,42% 99.8%,30% 98.9%,18% 99.8%,8% 98.8%,0 100%)}
+.tebub::before{content:"";position:absolute;left:-9px;top:46px;width:16px;height:16px;background:#FBF5E6;
+ border-left:1px solid #D9C9A8;border-bottom:1px solid #D9C9A8;transform:rotate(45deg)}
+.tebub b{display:block;font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.24em;color:#A8492A;margin-bottom:9px}
+.tebub p{margin:0;font-family:"Gowun Batang",serif;font-size:clamp(16px,2.1vw,21px);line-height:1.75;color:#2B211A;max-width:none}
+.tebub.cold b{color:#4E6E8E}
+.tesec{margin-top:clamp(26px,5vh,46px);border-top:1px dashed #C9B795;padding-top:clamp(18px,3vh,26px)}
+.tert{animation-delay:1.9s;text-align:center}
+.test{display:flex;justify-content:center;gap:clamp(6px,1.4vw,12px);margin:14px 0 10px}
+.test i{font-style:normal;font-size:clamp(28px,5.4vw,44px);line-height:1;color:#D6C7A6;
+ opacity:0;transform:scale(1.7) rotate(-14deg);animation:testmp .5s both;animation-delay:calc(2.15s + var(--i)*.16s)}
+.test i.on{color:#C0562B}
+@keyframes testmp{60%{opacity:1;transform:scale(.92) rotate(2deg)}to{opacity:1;transform:none}}
+.tert p{margin:0;font-size:14px;color:#6B5943;max-width:none}
+.teres{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#D9C9A8;border:1px solid #D9C9A8;
+ margin-top:clamp(20px,3.5vh,30px);animation-delay:2.9s}
+.terc{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(14px,2.4vw,22px);margin-top:clamp(22px,4vh,34px);animation-delay:3.7s;align-items:start}
+.tebtn{display:flex;gap:9px;flex-wrap:wrap;margin-top:clamp(22px,4vh,32px);animation-delay:4.4s}
+.tebtn .trb{flex:1 1 170px;text-align:center}
+.tec{background:#FBF5E6;padding:15px 16px 17px}
+.tec>span{display:block;font:500 9px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:#8A7355}
+.tec b{display:block;font-family:"Gowun Batang",serif;font-size:clamp(21px,3vw,27px);line-height:1;margin:9px 0 2px}
+.tec b em{font-style:normal;font-size:.55em;color:#8A7355;margin-left:3px}
+.tec .vis{margin-top:11px;height:46px;display:flex;align-items:flex-end}
+.tec.low b{color:#A8492A}
+.teg{display:block;width:100%;height:11px;border:1px solid #3A2E22;position:relative;background:rgba(255,255,255,.4)}
+.teg em{position:absolute;left:0;top:0;bottom:0;width:0;background:#3A2E22;animation:tegrow 1.1s 3.1s both}
+.teg.warn em{background:#A8492A}
+@keyframes tegrow{to{width:var(--w)}}
+.tetk{display:flex;gap:4px;width:100%;flex-wrap:wrap}
+.tetk s{display:block;flex:1 1 auto;height:17px;min-width:7px;border:1px solid #3A2E22;text-decoration:none;background:none;
+ opacity:0;animation:fin .3s both;animation-delay:calc(3.1s + var(--i)*.07s)}
+.tetk s.on{background:#3A2E22}
+.tetk.em s.z{border:0;border-top:1px dashed #A8936E;height:1px;align-self:center;opacity:.8;flex:0 0 40px}
+
+.tedl{display:block;width:58px;height:58px;overflow:visible}
+.tedl .arc{stroke:#C0562B;stroke-width:7;stroke-linecap:butt;stroke-dasharray:260;stroke-dashoffset:260;animation:drw 1.3s 3.1s both}
+.tecn{display:flex;flex-wrap:wrap;gap:3px;align-items:flex-end}
+.tecn i{display:block;width:13px;height:13px;border:1.5px solid #3A2E22;border-radius:50%;
+ opacity:0;animation:fin .3s both;animation-delay:calc(3.1s + var(--i)*.055s)}
+.tecn i.f{background:#C0562B;border-color:#C0562B}
+.tep{background:#F8F1DF;color:#3A2E22;position:relative;overflow:hidden;padding:16px 17px 18px;font-size:12.5px;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 80% at 18% 8%,rgba(255,255,255,.7),transparent 60%),
+  radial-gradient(90% 70% at 85% 95%,rgba(150,112,70,.2),transparent 65%);
+ filter:drop-shadow(0 12px 26px rgba(70,44,18,.22));
+ clip-path:polygon(0 1.6%,7% 0,16% 1.4%,26% .2%,36% 1.6%,46% .3%,56% 1.5%,66% .2%,76% 1.6%,86% .4%,94% 1.5%,100% .3%,
+  100% 98.4%,94% 100%,86% 98.6%,76% 99.7%,66% 98.5%,56% 99.8%,46% 98.6%,36% 99.7%,26% 98.5%,16% 99.8%,7% 98.7%,0 100%)}
+.tep.r1{transform:rotate(-.5deg)}.tep.r2{transform:rotate(.6deg)}
+.tep h5{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 11px;padding-bottom:8px;
+ border-bottom:1px dashed #BFAF90;font-family:"Gowun Batang",serif;font-size:16px}
+.tep h5 span{font:500 9.5px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:#8A7355}
+.tep .row{display:flex;justify-content:space-between;gap:10px;padding:3px 0;line-height:1.5;border-bottom:1px dotted #C3B394}
+.tep .row:last-child{border-bottom:0}
+.tep .row span:first-child{color:#8A7355}
+.tep .tot{border-bottom:0;border-top:1px dashed #BFAF90;margin-top:6px;padding-top:8px;font-weight:500}
+.tep .tot b:last-child{font-family:"Gowun Batang",serif;font-size:19px}
+.tep ul{list-style:none;margin:0;padding:0}
+.tep ul li{padding:8px 0;border-bottom:1px dotted #C3B394;line-height:1.55}
+.tep ul li:last-child{border-bottom:0}
+.tep ul li b{display:block;font-family:"Gowun Batang",serif;font-size:13.5px}
+.tep ul li span{display:block;color:#A8492A;font-size:12px}
+.tep ul li.none{color:#8A7355}
+.tepr{animation:prt 1.1s 3.9s both;overflow:hidden}
+@media(max-width:860px){
+ .tew{padding-top:clamp(68px,10vh,96px)}
+ .tegrid{grid-template-columns:132px 1fr;gap:12px}
+ .tebub{padding:15px 16px 16px}
+ .tebub::before{top:30px}
+ .teres{grid-template-columns:repeat(2,1fr)}
+ .terc{grid-template-columns:1fr}
+ .tebtn .trb{flex:1 1 100%}
+}
+/* ---------- story viewer ---------- */
+#vtrack{position:relative}
+.vstick{position:sticky;top:0;height:100svh;z-index:2}
+.vsp.first{margin-top:-100svh}
+.viewer{position:absolute;top:0;left:0;right:0;height:100svh;overflow:hidden;background:#20160F;color:var(--paper);contain:layout paint}
+.vsp{scroll-snap-align:start;scroll-snap-stop:always}
+html.snap{scroll-snap-type:y mandatory}
+html.snap body.story .ph,html.snap body.story .idx.nx,html.snap body.story footer{scroll-snap-align:start}
+body.endlock #v-story .idx.nx,body.endlock footer{display:none}
+.vprog{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(248,242,231,.16);z-index:4}
+.vprog i{display:block;height:100%;width:0;background:var(--amber)}
+body.onscene #bar .mark{color:#F8F2E7}
+body.onscene #bar .mark small{color:rgba(248,242,231,.6)}
+body.onscene #bar .pill{color:rgba(248,242,231,.78);border-color:rgba(248,242,231,.34)}
+body.onscene #bar .pill:hover{color:#F8F2E7;border-color:#F8F2E7}
+body.onscene #bar .dia{border-color:rgba(248,242,231,.34);color:rgba(248,242,231,.78)}
+body.onscene #bar .dia[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+body.teon #bar{background:none!important;padding-bottom:17px}
+body.teon #bar .mark{color:var(--ink)}
+body.teon #bar .mark small{color:var(--mut)}
+body.teon #bar .pill,body.teon #bar .dia{color:var(--mut);border-color:var(--line)}
+body.teon #bar .pill:hover,body.teon #bar .dia:hover{color:var(--ink);border-color:var(--ink)}
+body.teon #bar .dia[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+#bar .mark,#bar .pill,#bar .dia,#bar .mark small{transition:color .45s,border-color .45s,background .45s}
+.vscene{position:absolute;inset:0;will-change:auto;transform:translateZ(0)}
+.vscene svg{width:100%;height:100%;display:block}
+.vscene::after,.pstage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+ background:repeating-linear-gradient(0deg,rgba(255,238,206,.045) 0 2px,transparent 2px 4px),
+  repeating-linear-gradient(90deg,rgba(90,62,34,.05) 0 1px,transparent 1px 3px),
+  radial-gradient(128% 108% at 50% 46%,transparent 46%,rgba(12,7,3,.6) 100%)}
+.vscrim{position:absolute;inset:0;background:linear-gradient(100deg,rgba(24,15,9,.9) 0%,rgba(24,15,9,.72) 42%,rgba(24,15,9,.12) 78%)}
+.vcard{position:absolute;left:0;bottom:0;padding:0 clamp(24px,5vw,62px) clamp(34px,6vh,58px);max-width:min(760px,84%)}
+.vcard>*{opacity:0;transform:translateY(16px);transition:opacity .6s,transform .6s}
+.viewer.go .vcard>*{opacity:1;transform:none}
+.viewer.go .vrule{opacity:1;transform:scaleX(1)}
+.viewer.go .vcard>*:nth-child(2){transition-delay:.05s}
+.viewer.go .vcard>*:nth-child(3){transition-delay:.1s}
+.viewer.go .vcard>*:nth-child(4){transition-delay:.15s}
+.viewer.go .vcard>*:nth-child(5){transition-delay:.22s}
+.viewer.go .vcard>*:nth-child(6){transition-delay:.3s}
+.viewer.go .vcard>*:nth-child(7){transition-delay:.36s}
+.vrule{display:block;height:1px;background:rgba(248,242,231,.42);margin:16px 0 0;transform:scaleX(0);transform-origin:left;transition:transform .9s cubic-bezier(.2,.8,.2,1) .1s!important}
+.vcard h3{font-size:clamp(30px,5.4vw,60px);letter-spacing:.05em;line-height:1.1}
+.ven{display:block;font-size:10.5px;letter-spacing:.34em;color:var(--amber);margin-top:11px}
+.vq{font-family:"Gowun Batang",serif;font-size:clamp(17px,2.5vw,25px);line-height:1.6;margin:18px 0 0;color:#F8F2E7}
+.vd{font-size:15px;line-height:1.8;color:rgba(248,242,231,.72);margin:12px 0 0;max-width:46ch}
+.vsteps{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;border-top:1px solid rgba(248,242,231,.2)}
+.vsteps span{padding:12px 14px 0;border-right:1px solid rgba(248,242,231,.2);font-size:13px;line-height:1.5;color:rgba(248,242,231,.8)}
+.vsteps span:last-child{border-right:0;padding-right:0}
+.vsteps span:first-child{padding-left:0}
+.vsteps b{display:block;font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.2em;color:var(--amber);margin-bottom:7px}
+/* the year's ledger and the ending fork */
+.vextra{position:absolute;right:clamp(74px,8.5vw,120px);top:50%;transform:translateY(-50%);
+ width:min(310px,31vw);z-index:3;pointer-events:none}
+.viewer.hasx .vcard{max-width:min(560px,50%)}
+.yrc,.pcard{position:relative;overflow:hidden;color:#3A2E22;
+ font-family:"IBM Plex Mono",monospace;letter-spacing:.01em;
+ background:#F4ECD8;
+ background-image:repeating-linear-gradient(0deg,rgba(120,92,58,.05) 0 2px,transparent 2px 4px),
+  radial-gradient(120% 80% at 18% 8%,rgba(255,255,255,.7),transparent 60%),
+  radial-gradient(90% 70% at 85% 95%,rgba(150,112,70,.22),transparent 65%);
+ filter:drop-shadow(0 16px 34px rgba(0,0,0,.5));
+ clip-path:polygon(0 1.4%,6% 0,14% 1.2%,23% .2%,32% 1.4%,41% .3%,50% 1.3%,59% .2%,68% 1.4%,77% .4%,86% 1.3%,94% .3%,100% 1.4%,
+  100% 98.6%,94% 100%,86% 98.7%,77% 99.6%,68% 98.6%,59% 99.8%,50% 98.7%,41% 99.7%,32% 98.6%,23% 99.8%,14% 98.8%,6% 100%,0 98.6%)}
+.yrc{padding:20px 20px 26px;font-size:12px;transform:rotate(-1.2deg);animation:prt 1.2s steps(16) both}
+@keyframes prt{from{max-height:0}to{max-height:640px}}
+.yrc::after,.pcard::after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:repeating-linear-gradient(90deg,rgba(90,66,40,.05) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.yrc h5{font-family:"Gowun Batang",serif;font-size:15px;text-align:center;margin:0 0 4px;letter-spacing:.06em}
+.yrc .sub{display:block;text-align:center;font-size:9px;letter-spacing:.24em;color:#8A7355;margin-bottom:12px;
+ border-bottom:1px dashed #BFAF90;padding-bottom:9px}
+.yrc .r{display:flex;justify-content:space-between;gap:10px;padding:3.5px 0;
+ border-bottom:1px dotted #C3B394;opacity:0;animation:fin .4s both}
+.yrc .r:nth-child(2){animation-delay:.22s}.yrc .r:nth-child(3){animation-delay:.33s}
+.yrc .r:nth-child(4){animation-delay:.44s}.yrc .r:nth-child(5){animation-delay:.55s}
+.yrc .r:nth-child(6){animation-delay:.66s}.yrc .r:nth-child(7){animation-delay:.77s}
+.yrc .r:nth-child(8){animation-delay:.88s}.yrc .r:nth-child(9){animation-delay:.99s}
+.yrc .r span:first-child{color:#8A7355}
+.yrc .tt{border-bottom:0;padding-top:8px;font-weight:500}
+@keyframes fin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.yrc .stamp{display:block;text-align:center;margin-top:14px;border:2px solid #A8492A;color:#A8492A;
+ padding:5px 0;letter-spacing:.2em;font-size:10px;opacity:.9;border-radius:2px;mix-blend-mode:multiply;
+ transform:rotate(-3deg) scale(2.1);opacity:0;animation:stmp .35s 1.35s forwards}
+@keyframes stmp{to{transform:rotate(-3deg) scale(1);opacity:1}}
+.pcard{padding:19px 20px 22px;font-size:11.5px;transform:rotate(var(--rot,-1deg));animation:fin .5s both}
+.pcard h6{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 13px;
+ font-family:"Gowun Batang",serif;font-size:14.5px;letter-spacing:.04em;
+ border-bottom:1px dashed #BFAF90;padding-bottom:9px}
+.pcard h6 span{font-size:9px;letter-spacing:.2em;color:#8A7355;font-family:"IBM Plex Mono",monospace}
+.pcard .note2{color:#7E6A4E;line-height:1.6;margin-top:11px;font-size:11px}
+@keyframes fillx{to{transform:scaleX(1)}}
+/* 엔딩 */
+.vt{width:100%;height:auto;display:block;margin-top:2px}
+.vt path{fill:none;stroke:#3A2E22;stroke-width:2.2;stroke-linecap:round;
+ stroke-dasharray:330;stroke-dashoffset:330;animation:drw .8s ease forwards}
+.vt path:nth-of-type(2),.vt path:nth-of-type(3){animation-delay:.45s}
+.vt path:nth-of-type(4),.vt path:nth-of-type(5){animation-delay:.95s}
+@keyframes drw{to{stroke-dashoffset:0}}
+.vt circle{fill:#A8492A;opacity:0;animation:fin .35s forwards}
+.vt circle:nth-of-type(1){animation-delay:1.2s}
+.vt circle:nth-of-type(2){animation-delay:1.4s}
+.vt circle:nth-of-type(3){animation-delay:1.55s}
+.vt text{fill:#3A2E22;font-family:"Gowun Batang",serif;font-weight:700;font-size:15px;opacity:0;animation:fin .45s forwards}
+.vt text.s{fill:#A8492A;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:9.5px;letter-spacing:.16em}
+.vt text:nth-of-type(1){animation-delay:1.25s}
+.vt text:nth-of-type(2),.vt text:nth-of-type(3){animation-delay:1.45s}
+/* 하루 */
+.tl{display:flex;gap:4px}
+.tl i{flex:1;height:9px;background:#DCCDAC;position:relative;overflow:hidden}
+.tl i::after{content:"";position:absolute;inset:0;background:var(--amber);
+ transform:scaleX(0);transform-origin:left;animation:fillx .45s forwards}
+.tl i:nth-child(1)::after{animation-delay:.25s}.tl i:nth-child(2)::after{animation-delay:.6s}
+.tl i:nth-child(3)::after{animation-delay:.95s}.tl i:nth-child(4)::after{animation-delay:1.3s}
+.tlb{display:flex;gap:4px;margin-top:7px}
+.tlb span{flex:1;font-size:9.5px;color:#7E6A4E;text-align:center;opacity:0;animation:fin .4s forwards}
+.tlb span:nth-child(1){animation-delay:.3s}.tlb span:nth-child(2){animation-delay:.65s}
+.tlb span:nth-child(3){animation-delay:1s}.tlb span:nth-child(4){animation-delay:1.35s}
+.hpr{display:flex;justify-content:space-between;margin:16px 0 6px;font-size:10px;color:#8A7355}
+.hpb{height:9px;background:#DCCDAC}
+.hpb i{display:block;height:100%;width:100%;background:#3A2E22;animation:drain .9s 1.7s forwards}
+@keyframes drain{to{width:70%}}
+/* 프롤로그 */
+.call{display:flex;gap:11px;align-items:center}
+.av{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#CBBB9B;position:relative}
+.av::after{content:"";position:absolute;inset:-6px;border:1.5px solid var(--amber);border-radius:50%;
+ opacity:0;animation:ring 1.6s .3s infinite}
+@keyframes ring{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.45);opacity:0}}
+.call b{display:block;font-family:"Gowun Batang",serif;font-size:14px}
+.call i{font-style:normal;font-size:10px;color:#8A7355}
+.typ{margin-top:14px;font-family:"Gowun Batang",serif;font-size:14px;line-height:1.5;
+ overflow:hidden;white-space:nowrap;width:0;border-right:2px solid var(--amber);
+ animation:typ 1.5s .5s steps(22) forwards,cur .7s step-end infinite}
+@keyframes typ{to{width:100%}}
+@keyframes cur{50%{border-color:transparent}}
+.tagp{margin-top:13px;display:inline-block;border:2px solid #A8492A;color:#A8492A;padding:4px 10px;
+ font-size:9.5px;letter-spacing:.14em;transform:rotate(-2deg) scale(2);opacity:0;
+ animation:stmp .3s 2.1s forwards;mix-blend-mode:multiply}
+/* 1장 */
+.cmp{margin-top:4px}
+.cmp .cr{margin-bottom:13px}
+.cmp .ct2{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:5px}
+.cmp .ct2 b{font-family:"Gowun Batang",serif;font-size:13px}
+.cmp .cb{height:9px;background:#DCCDAC;position:relative;overflow:hidden}
+.cmp .cb i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);animation:fillx .8s forwards}
+.cmp .f i{background:#A8492A;animation-delay:.3s}
+.cmp .s2 i{background:#3A2E22;animation-delay:.8s}
+/* 2장 */
+.slips{position:relative;padding:4px 0 2px}
+.slip{background:rgba(255,250,236,.72);border:1px solid #C6B693;padding:8px 11px;margin-bottom:7px;
+ font-size:11px;transform:rotate(var(--r)) translateY(-8px);opacity:0;animation:eIn .5s forwards}
+@keyframes eIn{to{opacity:1;transform:rotate(var(--r)) translateY(0)}}
+.slip:nth-child(1){animation-delay:.3s}.slip:nth-child(2){animation-delay:.55s}
+.slip:nth-child(3){animation-delay:.8s}.slip:nth-child(4){animation-delay:1.05s}
+.slip b{color:#A8492A;margin-right:7px}
+.slip.blank{color:#A3907010;background:#EFE6D0}
+.slip.blank b{color:#9A8767}
+/* 3장 */
+.lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:2px}
+.lgrid i{font-style:normal;text-align:center;font-size:9px;padding:6px 0;background:rgba(206,189,152,.6);
+ color:#6E5B41;letter-spacing:.06em;opacity:0;animation:fin .25s forwards}
+/* 4장 */
+.clues{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.clues i{font-style:normal;font-size:10px;padding:6px 10px;border:1px solid #C6B693;color:#8A7355;
+ opacity:0;animation:clu .5s forwards}
+@keyframes clu{0%{opacity:0;transform:translateY(6px)}60%{background:#A8492A;color:#F2EAD6;border-color:#A8492A}
+ 100%{opacity:1;transform:none;background:#3A2E22;color:#F2EAD6;border-color:#3A2E22}}
+.clues i:nth-child(1){animation-delay:.3s}.clues i:nth-child(2){animation-delay:.5s}
+.clues i:nth-child(3){animation-delay:.7s}.clues i:nth-child(4){animation-delay:.9s}
+.clues i:nth-child(5){animation-delay:1.1s}
+.csum{margin-top:13px;padding-top:10px;border-top:1px dashed #CBBB9B;font-size:10px;color:#8A7355;
+ display:flex;justify-content:space-between;opacity:0;animation:fin .4s 1.35s forwards}
+.csum b{font-family:"Gowun Batang",serif;font-size:15px;color:#A8492A}
+@media(max-width:1020px){.vextra{width:min(260px,30vw);right:clamp(66px,7vw,96px)}.yrc{font-size:11px}}
+@media(max-width:760px){
+ .vextra{position:absolute;top:clamp(70px,10vh,96px);left:22px;right:22px;width:auto;transform:none}
+ .viewer.hasx .vd{display:none!important}
+ .viewer.hasx .vcard{max-width:none}
+ .vextra .yrc{max-width:300px}
+ .vextra .pcard{max-width:340px}
+}
+.vrail{position:absolute;right:clamp(14px,2.6vw,30px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:clamp(8px,1.5vh,15px);z-index:6}
+.vrail button{width:40px;height:40px;border-radius:50%;border:1px solid rgba(248,242,231,.28);display:grid;place-items:center;position:relative;transition:.35s}
+.vrail button i{width:6px;height:6px;border-radius:50%;background:rgba(248,242,231,.5);transition:.35s}
+.vrail button:hover{border-color:#F8F2E7}
+.vrail button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber)}
+.vrail button[aria-pressed="true"] i{background:#F8F2E7;width:8px;height:8px}
+.vrail button span{position:absolute;right:50px;top:50%;transform:translateY(-50%) translateX(8px);white-space:nowrap;
+ font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.18em;color:#F8F2E7;background:rgba(24,15,9,.82);padding:7px 11px;opacity:0;pointer-events:none;transition:.3s}
+.vrail button:hover span,.vrail button[aria-pressed="true"] span{opacity:1;transform:translateY(-50%)}
+.vcont{position:absolute;right:clamp(14px,2.6vw,30px);bottom:clamp(20px,4vh,34px);z-index:3;
+ width:72px;height:72px;border-radius:50%;border:1px solid rgba(248,242,231,.45);color:#F8F2E7;display:grid;place-items:center;gap:0;transition:.35s}
+.vcont span{font-family:"Gowun Batang",serif;font-size:14px;letter-spacing:.06em}
+.vcont i{position:absolute;bottom:13px;left:50%;margin-left:-4px;width:8px;height:8px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(-45deg);animation:nudge 2s infinite}
+@keyframes nudge{0%,100%{transform:rotate(-45deg) translate(0,0)}50%{transform:rotate(-45deg) translate(3px,3px)}}
+.vcont:hover{background:var(--amber);border-color:var(--amber)}
+@media(max-width:760px){
+ .vcard{max-width:none;padding:0 22px 74px}
+ .vrail{right:auto;left:22px;top:auto;bottom:22px;transform:none;flex-direction:row;gap:7px}
+ .vrail button{width:28px;height:28px}.vrail button span{display:none}
+ .vcont{right:22px;bottom:14px;width:58px;height:58px}
+ .vcont span{font-size:13px}
+ .vsteps{grid-template-columns:1fr 1fr}
+ .vsteps span{border-right:0;padding:11px 10px 0 0;font-size:12.5px}
+ .vsteps span:nth-child(odd){padding-left:0}
+ .vscrim{background:linear-gradient(180deg,rgba(24,15,9,.3) 0%,rgba(24,15,9,.84) 48%,rgba(24,15,9,.95) 100%)}
+}
+.ax{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.ax>div{background:var(--paper);padding:19px 15px;font-size:14px}
+.ax b{display:block;font-family:"Gowun Batang",serif;font-size:16px;margin-bottom:5px}
+.ax span{color:var(--mut);font-size:13.5px;line-height:1.65}
+@media(max-width:880px){.ax{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.ax{grid-template-columns:1fr}}
+.nx{border-top:1px solid var(--ink);margin-top:68px}
+footer{border-top:1px solid var(--ink);padding:42px 0 56px}
+footer .wrap{display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;font-size:13.5px;color:var(--mut)}
+footer b{font-family:"Gowun Batang",serif;font-size:20px;letter-spacing:.14em;color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.pull em i,.ri i{transform:none!important}#menu .mi .t span{transform:none;opacity:1}
+ .yrc{clip-path:none!important}.yrc .r,.yrc .stamp,.pcard,.pcard *{opacity:1!important;transform:none!important}
+ .bmflood{clip-path:none!important}.bm{opacity:1!important;transform:none!important}}
+</style></head><body class="lock">
+
+<!-- ================= LOADER ================= -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute;pointer-events:none"><defs>
+ <filter id="rough" x="-8%" y="-8%" width="116%" height="116%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="9" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G"/>
+ </filter>
+ <filter id="rough2" x="-8%" y="-8%" width="116%" height="116%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="3" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+ </filter>
+</defs></svg>
+
+<div id="load">
+ <canvas id="lc" aria-hidden="true"></canvas>
+ <div class="pile" id="pile" aria-hidden="true"></div>
+ <div class="lnum"><span id="num">0</span><em>%</em></div>
+ <i class="barl" id="barl"></i>
+</div>
+
+<!-- ================= TOP BAR ================= -->
+<div id="bar">
+ <button class="pill" data-go="home">HOME</button>
+ <span class="rt">
+  <button class="pill" id="mbtn" aria-expanded="false">MENU</button>
+  <button class="dia" id="snd" aria-pressed="false" aria-label="소리 켜기">
+   <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+    <path class="spk" d="M4 9.5h3.2L12 5.6v12.8l-4.8-3.9H4z"/>
+    <g class="wv"><path d="M15.2 9.2a4 4 0 0 1 0 5.6"/><path d="M17.6 6.8a7.4 7.4 0 0 1 0 10.4"/></g>
+    <g class="mx"><path d="M15.4 9.6l5 5M20.4 9.6l-5 5"/></g>
+   </svg><span class="sl">OFF</span></button>
+ </span>
+</div>
+
+<!-- ================= MENU ================= -->
+<nav id="menu" aria-hidden="true">
+ <button class="mclose" id="mclose" aria-label="메뉴 닫기">CLOSE</button>
+ <button class="mi" data-go="home"><span class="t" data-t="홈"></span><span class="s">HOME</span><i class="dot"></i></button>
+ <button class="mi" data-go="concept"><span class="t" data-t="컨셉"></span><span class="s">CONCEPT · 무엇을 다루나요</span><i class="dot"></i></button>
+ <button class="mi" data-go="play"><span class="t" data-t="플레이"></span><span class="s">GAMEPLAY · 어떻게 치우고, 듣나요</span><i class="dot"></i></button>
+ <button class="mi" data-go="story"><span class="t" data-t="스토리"></span><span class="s">STORY · 하루 · 1년 · 엔딩</span><i class="dot"></i></button>
+ <button class="mi" data-href="prologue/index.html"><span class="t" data-t="체험해보기"></span><span class="s">PROLOGUE · 첫 하루를 직접</span><i class="dot"></i></button>
+</nav>
+
+<main id="main">
+
+<!-- ================= HOME ================= -->
+<div class="view on" id="v-home">
+ <div id="track"><div class="stage">
+  <div class="htitle"><h1>환기</h1><p>당신이 치워야 할 것은 무엇인가</p></div>
+  <div class="hcore">
+   <div class="blob"></div>
+   <div class="ringw"><svg viewBox="0 0 400 400" aria-hidden="true">
+    <defs><path id="cp" d="M200,200 m-166,0 a166,166 0 1,1 332,0 a166,166 0 1,1 -332,0"/></defs>
+    <text textLength="1043" lengthAdjust="spacing"><textPath href="#cp">마주하고 · 정돈하고 · 과감히 버려라 ·</textPath></text>
+   </svg></div>
+   <div class="railw"><div class="rail" id="rail"></div></div>
+  </div>
+  <div class="hfoot">
+   <div class="ocap" id="ocap"></div>
+   <div class="hint">SCROLL TO DISCOVER<i></i></div>
+  </div>
+ </div></div>
+
+ <div class="bigmenu" id="bigmenu"><div class="bmflood">
+  <button class="bm" data-go="concept"><span class="t">컨셉</span><span class="s">청소는 본업이고 상담은 선택이에요. 그 사이의 거리를 다뤄요.</span><i class="dot"></i></button>
+  <button class="bm" data-go="play"><span class="t">플레이</span><span class="s">조사하고, 치우고, 한마디를 건네요. 시간과 체력 안에서요.</span><i class="dot"></i></button>
+  <button class="bm" data-go="story"><span class="t">스토리</span><span class="s">하루가 쌓여 1년이 되고, 1년이 끝나면 엔딩이 와요.</span><i class="dot"></i></button>
+  <button class="bm" data-href="prologue/index.html"><span class="t">체험해보기</span><span class="s">프롤로그, 첫 하루를 직접 해 보세요.</span><i class="dot"></i></button>
+ </div></div>
+</div>
+
+<!-- ================= TRIAL ================= -->
+<div class="view" id="v-trial">
+ <div class="trs">
+  <div class="trmap" id="trMap">
+   <div class="trmv" id="trMv">
+    <svg id="svTR" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-label="의뢰인의 방"></svg>
+    <svg id="svTH" class="trhot" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice"></svg>
+   </div>
+  </div>
+  <span class="pscrim trscrim"></span>
+  <div class="trhd"><span class="lab" style="color:rgba(248,242,231,.6)">DEMO · 의뢰 #001</span><b id="trTitle">이사 전날의 방</b></div>
+  <div class="say trsay" id="trSay"></div>
+  <div class="trpan" id="trPan"></div>
+  <div class="trtm" id="trTm"></div>
+  <div class="trob tres out" id="trEst">
+   <div class="trobc">
+    <span class="lab" style="color:#8A7355">ESTIMATE · EST-001</span>
+    <h4>이사 전날의 방</h4>
+    <i class="esmk">접 수<br>001</i>
+    <div class="esr"><span>의뢰 조건</span><b>바닥 동선 확보<br>(9개 중 8개 이상)</b></div>
+    <div class="esr"><span>특별 청소 주문</span><b>창문 닦기</b></div>
+    <div class="esr"><span>보호 물건</span><b>돌려보낼 그릇</b></div>
+    <div class="esr"><span>보수</span><b>$120 · 하루</b></div>
+    <p class="esdm">“내일 이사를 가요. 견적서에 적은 대로만 부탁드려요.”</p>
+    <button class="trb pri trplay" data-a="go">의뢰 받기<small>제한 시간 3:00</small></button>
+   </div>
+  </div>
+  <div class="tre" id="trEnd"></div>
+  <div class="trob" id="trOb">
+   <div class="trobc">
+    <span class="lab" style="color:#8A7355">HOW TO PLAY</span>
+    <h4>의뢰 하나를 직접 해 보세요</h4>
+    <ol>
+     <li><b>견적서를 기억해요</b><span>조건, 특별 주문, 보호 물건은 견적서에만 적혀 있어요.</span></li>
+     <li><b>방을 끌어서 둘러보고, 점을 눌러 고르세요</b><span>조사 · 정리 · 폐기는 손으로 직접 해야 해요.</span></li>
+     <li><b>모든 행동은 체력과 시간을 써요</b><span>하루는 09:00–18:00. 남은 체력이 30 아래면 조사해도 아무것도 보이지 않아요.</span></li>
+     <li><b>체험은 3분 동안만 할 수 있어요</b><span>제한 시간이 끝나면 하루가 바로 마감되고, 결과는 영수증에 남아요.</span></li>
+    </ol>
+    <button class="trb pri trplay" data-a="play">PLAY<small>의뢰 시작</small></button>
+   </div>
+  </div>
+ </div>
+ <button class="trmenu" id="trMenu"><i></i><span>MENU</span></button>
+</div>
+
+<!-- ================= CONCEPT ================= -->
+<div class="view" id="v-concept">
+ <div class="ph"><div class="wrap"><div><h2>컨셉</h2></div>
+  <div><div class="en">C O N C E P T</div><p>청소는 본업이고, 상담은 선택이에요. 이 게임은 그 두 가지 사이의 거리를 다뤄요.</p></div></div></div>
+
+ <section><div class="wrap">
+  <p class="pull rv"><em><i>마주하고,</i></em><em><i>정돈하고,</i></em><em><i>과감히 버려라.</i></em></p>
+  <div class="hd rv" style="margin-top:clamp(40px,7vh,72px)"><span class="lab">한 줄 정의</span><div>
+   <ul class="b">
+    <li>SNS로 청소 의뢰를 받는 <b>1인 청소업자</b>가 되어, 게임 속 시간으로 약 <b>1년</b>을 보내요.</li>
+    <li>배경은 팁 문화가 있는 현대 서양권 도시예요. 서양임을 직접 말하는 대신 <b>남의 공간에 들어가는 낯섦</b>을 보여주는 데 써요.</li>
+    <li>방 속 물건과 흔적은 읽을 수 있어요. 하지만 의뢰인의 삶에 <b>개입할지는 플레이어가 정해요.</b></li>
+    <li>청소만 잘해 주면 할 일은 다 한 거예요. 상담은 본업이 아니라 서브 요소, 요즘 말로 퍼스널 브랜딩에 가까워요.</li>
+    <li>시간과 체력 안에서 청소를 마칠지, 흔적을 조사할지, 대화를 나눌지. 그 선택에 따라 결과와 <b>의뢰인의 미련을 끊어내는 서사적 무게</b>가 달라져요.</li>
+   </ul></div></div>
+ </div></section>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>방은 인물의 외부화된 상태예요</h3>
+   <p class="sb">방은 퍼즐 맵이 아니라, 지금 그 사람이 어떤 상태인지를 보여주는 화면이에요. 모든 의뢰에는 네 가지가 숨어 있어요.</p></div></div>
+  <div class="anat rv">
+   <div class="anatsc">
+    <svg id="svA" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+    <button class="hot" data-k="0" style="left:56%;top:70%" aria-label="표면 문제"><i></i></button>
+    <button class="hot" data-k="1" style="left:30%;top:59%" aria-label="숨은 문제"><i></i></button>
+    <button class="hot" data-k="2" style="left:46%;top:65%" aria-label="핵심 물건"><i></i></button>
+    <button class="hot" data-k="3" style="left:68%;top:49%" aria-label="보호 물건"><i></i></button>
+   </div>
+   <ul class="anl" id="anl">
+    <li><button data-k="0"><b>표면 문제</b><p>의뢰인이 청소를 요청한 명분이에요. 이사, 손님 방문, 악취, 물건 찾기.</p></button></li>
+    <li><button data-k="1"><b>숨은 문제</b><p>방이 이렇게 된 정서적·관계적 이유예요. 청소만 하기로 하면 끝까지 몰라도 괜찮아요.</p></button></li>
+    <li><button data-k="2"><b>핵심 물건</b><p>조사하면 맥락과 선택지가 열려요. 조사한 뒤 버려도 진행은 막히지 않아요.</p></button></li>
+    <li><button data-k="3"><b>보호 물건</b><p>견적서에 '건드리지 말 것'이라 적힌 물건이에요. 버려도 실패하지 않지만 평점의 상한이 내려가요.</p></button></li>
+   </ul>
+  </div>
+ </div></section>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>색은 결과를 알려주는 신호예요</h3>
+   <p class="sb">기본값은 흑백에 가까운 무채색이에요. 장식으로 쓰는 색은 없어요. 아래 세 방은 <b>청소를 똑같이 끝낸</b> 같은 방이에요. 상담을 어떻게 했는지만 달라요.</p></div></div>
+  <div class="rule rv">
+   <div><span>밝기</span><b>청소 결과</b><i>작업이 진행될 때마다</i></div>
+   <div><span>온도 · 채도</span><b>상담 결과</b><i>하루가 끝날 때 한 번에</i></div>
+  </div>
+  <div class="tplay rv">
+   <div class="tsc">
+    <svg id="svT" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-label="색이 바뀌는 방"></svg>
+    <span class="tslate" id="tslate">하루 마무리 · 중간 정산</span>
+   </div>
+   <div class="tctl">
+    <div class="tc">
+     <label>청소 <b class="mono" id="tpv">50%</b></label>
+     <input type="range" id="tp" min="0" max="100" value="50" aria-label="청소 진행">
+     <i>밝기는 작업이 진행되는 <b>과정마다</b> 바뀌어요. 지금 바로 움직여 보세요.</i>
+    </div>
+    <div class="tc">
+     <label>하루 마무리</label>
+     <div class="seg" id="tcs"><button aria-pressed="true">상담 안 함</button><button aria-pressed="false">상담 성공</button><button aria-pressed="false">상담 실패</button></div>
+     <i>온도와 채도는 하루가 끝날 때 <b>한 번에</b> 확정돼요.</i>
+    </div>
+    <p class="tnote" id="tnote">깨끗해진 만큼 밝아졌을 뿐, 색은 생기지 않았어요. 상담하지 않은 건 벌이 아니라서 화면도 중립에 머물러요.</p>
+   </div>
+  </div>
+ </div></section>
+ <div class="idx nx two">
+  <button class="ir" data-go="home" data-reload="1"><span class="in"><span class="n">BACK</span><span class="t">처음으로</span></span></button>
+  <button class="ir nxt" data-go="play"><span class="in"><span class="n">NEXT</span><span class="t">플레이</span></span></button>
+ </div>
+</div>
+
+<!-- ================= PLAY ================= -->
+<div class="view" id="v-play">
+ <div class="ph"><div class="wrap"><div><h2>플레이</h2></div>
+  <div><div class="en">G A M E P L A Y</div><p>하루가 시간의 최소 단위예요. 무엇에 시간과 체력을 쓰는지가 그날의 결과를 만들어요.</p></div></div></div>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>네 가지를 조작해요</h3>
+   <p class="sb">이 중 꼭 해야 하는 건 청소뿐이에요. 나머지는 플레이어가 고르는 거예요.</p></div></div>
+  <div class="g4 rv">
+   <div><span class="n">조사</span><h4>흔적을 찾아요</h4><p>사물을 클릭하고 돌려 가며 숨은 흔적을 발견해요. 조사한 물건은 청소 결과·상담 질문·의뢰인의 반응 중 하나는 반드시 바꿔요.</p></div>
+   <div><span class="n">청소</span><h4>직접 처리해요</h4><p>의뢰 조건과 방 구조에 맞춰 드래그로 옮겨요.</p><span class="ex">정리 · 세척 · 분류 · 보류 · 폐기</span></div>
+   <div><span class="n">상담</span><h4>한마디를 건네요</h4><p>모은 단서를 근거로 대화해요. 단서 없이 단정하면 대화가 닫혀요. 들어가지 않고 청소만 끝내도 괜찮아요.</p></div>
+   <div><span class="n">자원</span><h4>자기 관리도 해요</h4><p>번 돈으로 휴무에 공부해서 지식을 올리거나, 체력 회복 소모품을 사요.</p></div>
+  </div>
+ </div></section>
+
+ <section style="padding-bottom:0"><div class="wrap">
+  <div class="hd rv solo"><div><h3>같은 방, 다른 결과</h3>
+   <p class="sb">왼쪽은 장면, 오른쪽은 조작과 정보. 게임의 화면 규칙 그대로예요. 아래에서 직접 움직여 보면 청소·보호 물건·상담이 평점과 영수증으로 어떻게 돌아오는지 보여요.</p></div></div>
+ </div>
+
+ <div id="ptrack"><div class="pstage">
+  <svg id="svD" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-label="청소 상태에 따라 변하는 방"></svg>
+  <span class="pscrim"></span>
+  <div class="phead"><span class="lab" style="color:rgba(248,242,231,.6)">TRY IT</span><b>의뢰 #017</b></div>
+  <div class="ppan">
+   <div class="est">
+    <div class="t"><b>견적서</b><span class="mono" style="font-size:12px;color:var(--mut)">EST-017</span></div>
+    <div class="row"><span>의뢰 조건</span><span>거실·주방 정리, 동선 확보</span></div>
+    <div class="row"><span>특별 청소 주문</span><span>창틀과 유리 닦기</span></div>
+    <div class="row"><span>보호 물건</span><span>돌려보낼 그릇 1점</span></div>
+    <div class="row"><span>예상 소요일 / 보수</span><span>3일 / $120</span></div>
+   </div>
+   <div class="ctl"><label>의뢰 조건 완료율 <b class="mono" id="pv">0%</b></label>
+    <input type="range" id="pg" min="0" max="100" value="0" aria-label="완료율"></div>
+   <div class="ctl"><label>특별 청소 주문</label>
+    <div class="seg" id="sp"><button aria-pressed="true">하지 않음</button><button aria-pressed="false">완료</button></div></div>
+   <div class="ctl"><label>보호 물건</label>
+    <div class="seg" id="pr"><button aria-pressed="true">지킴</button><button aria-pressed="false">폐기</button></div></div>
+   <div class="ctl"><label>상담</label>
+    <div class="seg" id="cs"><button aria-pressed="true">안 함</button><button aria-pressed="false">성공</button><button aria-pressed="false">실패</button></div></div>
+   <div class="rcpt" id="rc"></div>
+  </div>
+  <div class="say" id="say"></div>
+ </div></div>
+
+ <section><div class="wrap">
+  <p class="rv" style="color:var(--mut);font-size:14px">평점은 청소 품질로만 정해져요. 상담 여부로는 깎이지 않고, 대신 팁과 후기 문장과 엔딩으로 돌아와요.</p>
+ </div></section>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>오늘 얼마나 무리할까요</h3>
+   <p class="sb">체력 기본값은 100이에요. 하루를 어떻게 마무리하느냐가 다음 날의 시작 체력을 정해요.</p></div></div>
+  <div class="stam rv">
+   <div>
+    <div class="seg" id="ed"><button aria-pressed="true">일찍</button><button aria-pressed="false">보통</button><button aria-pressed="false">늦게</button></div>
+    <div class="gauge"><i id="gg" style="width:100%"></i></div>
+    <div class="row mono" style="font-size:13px"><span>다음 날 시작 체력</span><span id="hp">100</span></div>
+    <p style="font-size:14.5px;color:var(--mut);margin-top:15px">체력이 바닥나도 강제 휴무는 없어요. 대신 하루에 할 수 있는 행동 수가 줄어들어요. 무리하면 손해라는 감각을 흐름을 끊지 않고 전하려고요.</p>
+   </div>
+   <div>
+    <div class="note" id="en1">일찍 접으면 다음 날 체력이 가득 차요. 그만큼 내일 할 수 있는 작업량의 상한도 높아져요.</div>
+    <div id="ext" style="margin-top:17px;display:none">
+     <span class="lab" style="display:block;margin-bottom:8px">연장분은 한 번에 한 용도만</span>
+     <div class="seg" id="ex"><button aria-pressed="true">작업</button><button aria-pressed="false">조사·상담</button></div>
+     <div class="note" id="ed2" style="margin-top:15px;min-height:0">같은 품질을 더 적은 일수로 끝내요. 남은 일수는 휴무나 다음 의뢰가 돼요.</div>
+    </div>
+   </div>
+  </div>
+ </div></section>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>이 게임의 적대자는 사람이 아니에요</h3>
+   <p class="sb">앞을 막는 건 악역이 아니라 세 개의 규칙이에요. 셋 중 어느 것도 게임 오버를 만들지 않아요. 대신 다음 방을 조금씩 어렵게 만들어요.</p></div></div>
+  <div class="g3 rv">
+   <div><span class="n">시간과 체력</span><h4>무리한 하루는 내일에 청구돼요</h4><p>늦게 마무리할수록 다음 날 시작 체력이 줄어요. 바닥나도 쫓겨나지 않아요. 할 수 있는 일이 줄어들 뿐이에요.</p><span class="ex">100 / 85 / 70</span></div>
+   <div><span class="n">보호 물건</span><h4>버릴 수 있다는 게 함정이에요</h4><p>'건드리지 말 것'이라 적힌 물건에도 폐기 버튼은 똑같이 눌려요. 실패하지 않아요. 평점의 상한만 조용히 내려가요.</p><span class="ex">1개 → 상한 4점 · 2개 → 상한 3점</span></div>
+   <div><span class="n">평점</span><h4>평판은 다음 방에서 돌아와요</h4><p>평점이 낮아지면 서브 의뢰비가 깎이고, 메인의 청소 기준이 올라가고, 의뢰인이 더 방어적이 돼요.</p><span class="ex">한 단계씩 · 3개월 이동평균 · 하한 70%</span></div>
+  </div>
+  <div class="hd rv" style="margin:clamp(34px,6vh,56px) 0 0"><span class="lab">관리하는 값</span><div>
+   <p class="sb" style="margin-top:0">다섯 개의 수치가 서로를 묶어요. 돈을 벌려면 시간을 쓰고, 시간을 쓰면 체력이 깎이고, 체력을 아끼면 단서를 놓쳐요.</p></div></div>
+  <div class="ax rv">
+   <div><b>시간</b><span>약 1년. 하루가 최소 단위이고 의뢰는 하루 또는 며칠이 걸려요</span></div>
+   <div><b>체력</b><span>기본 100. 일차마다 소비하고 회복해요</span></div>
+   <div><b>돈</b><span>기본 청소비, 특별 수당, 팁. 소모품과 공부에 써요</span></div>
+   <div><b>지식</b><span>휴무의 공부와 공백의 자습으로 쌓여요. 질문의 정밀도를 높일 뿐 진단 능력은 아니에요</span></div>
+   <div><b>평점</b><span>청소 품질로만 정해져요. 상담은 들어가지 않아요</span></div>
+  </div>
+ </div></section>
+
+ <section><div class="wrap">
+  <div class="hd rv solo"><div><h3>물건은 세 가지 일을 해요</h3>
+   <p class="sb">물건이 많은 방이 기본 콘셉트예요. 겉과 속이 다른 물건을 따로 분류하지 않고, 해석의 여지는 개별 물건에 둬요.</p></div></div>
+  <div class="g3 rv">
+   <div><span class="n">기능 물건</span><h4>청소 목표가 돼요</h4><p>치워야 할 양이자 퍼즐의 기본 단위예요. 방의 동선을 만들거나 막아요.</p><span class="ex">식기 · 옷 · 가구 · 쓰레기</span></div>
+   <div><span class="n">맥락 물건</span><h4>사정을 알려줘요</h4><p>조사하면 인물과 사건의 단서가 돼요.</p><span class="ex">영수증 · 메모 · 사진 · 대화 기록</span></div>
+   <div><span class="n">감정 물건</span><h4>선택을 어렵게 만들어요</h4><p>상담 분기와 선택의 핵심이에요. 버릴 수도, 보류해서 의뢰인에게 물어볼 수도 있어요.</p><span class="ex">오래된 선물 · 버리지 못한 상자 · 망가진 물건</span></div>
+  </div>
+ </div></section>
+ <div class="idx nx two">
+  <button class="ir" data-go="concept"><span class="in"><span class="n">PREV</span><span class="t">컨셉</span></span></button>
+  <button class="ir nxt" data-go="story"><span class="in"><span class="n">NEXT</span><span class="t">스토리</span></span></button>
+ </div>
+</div>
+
+<!-- ================= STORY ================= -->
+<div class="view" id="v-story">
+ <div class="ph"><div class="wrap"><div><h2>스토리</h2></div>
+  <div><div class="en">S T O R Y</div><p>하루가 쌓여 1년이 되고, 1년이 끝나면 엔딩이 와요.</p></div></div></div>
+
+ <div id="vtrack"><div class="vstick"><div class="viewer">
+  <div class="vscene"><svg id="svS" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg><span class="vscrim"></span></div>
+  <div class="vrail" id="vrail"></div>
+  <div class="vcard">
+   <h3 id="vttl"></h3>
+   <span class="ven mono" id="ven"></span>
+   <span class="vrule"></span>
+   <p class="vq" id="vq"></p>
+   <p class="vd" id="vd"></p>
+   <div class="vsteps" id="vsteps"></div>
+  </div>
+  <div class="vextra" id="vextra"></div>
+  <span class="vprog"><i id="vprog"></i></span>
+ </div></div></div>
+ <div class="idx nx two">
+  <button class="ir" data-go="play"><span class="in"><span class="n">PREV</span><span class="t">플레이</span></span></button>
+  <button class="ir nxt" data-href="prologue/index.html"><span class="in"><span class="n">NEXT</span><span class="t">체험해보기</span></span></button>
+ </div>
+</div>
+
+<footer><div class="wrap">
+ <div><b>환기 VENTING</b></div>
+ <div>당신이 치워야 할 것은 무엇인가</div>
+</div></footer>
+</main>
+
+<script>
+(function(){
+var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+var RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+var TOUCH=matchMedia('(pointer:coarse)').matches||innerWidth<860;
+var SNAP=TOUCH&&!!(window.CSS&&CSS.supports&&CSS.supports('scroll-snap-stop','always'));
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+scrollTo(0,0);
+
+/* ===================== sound ===================== */
+var AC,ON=false,NB,ambG,ambF;
+function mk(){ if(AC) return;
+ AC=new(window.AudioContext||window.webkitAudioContext)();
+ NB=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);var d=NB.getChannelData(0),l=0;
+ for(var i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.4}
+ var a=AC.createBufferSource();a.buffer=NB;a.loop=true;
+ ambF=AC.createBiquadFilter();ambF.type='lowpass';ambF.frequency.value=TOUCH?900:250;
+ ambG=AC.createGain();ambG.gain.value=0;
+ a.connect(ambF);ambF.connect(ambG);ambG.connect(AC.destination);a.start()}
+function tone(f,d,v,t,dl){if(!ON)return;try{var o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime+(dl||0);
+ o.type=t||'sine';o.frequency.value=f;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.0006,n+d);
+ o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d)}catch(e){}}
+function nz(f,q,d,v,ty,sw){if(!ON)return;try{var s=AC.createBufferSource();s.buffer=NB;
+ var b=AC.createBiquadFilter();b.type=ty||'bandpass';b.frequency.value=f;b.Q.value=q;
+ if(sw)b.frequency.exponentialRampToValueAtTime(sw,AC.currentTime+d);
+ var g=AC.createGain(),n=AC.currentTime;g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(v,n+d*.18);
+ g.gain.exponentialRampToValueAtTime(.0006,n+d);
+ s.connect(b);b.connect(g);g.connect(AC.destination);s.start(n,Math.random());s.stop(n+d)}catch(e){}}
+var S={hov:function(){nz(560,.9,.5,.04,'bandpass',1500)},
+ clk:function(){tone(190,.12,.1,'triangle');nz(2600,2,.06,.04,'highpass')},
+ open:function(){nz(300,.7,1.3,.15,'bandpass',2300);tone(128,.34,.07,'triangle')},
+ chime:function(){tone(784,1.3,.08);tone(1175,1.7,.058,null,.16);tone(1568,2,.038,null,.34)},
+ brush:function(){nz(2700,1.2,.1,.05)},
+ print:function(){for(var i=0;i<11;i++)(function(k){setTimeout(function(){nz(1900,3,.05,.045,'highpass')},k*105)})(i)},
+ stamp:function(){tone(72,.33,.25);nz(420,1,.12,.12)},
+ pop:function(){tone(500+Math.random()*120,.14,.06)}};
+function air(v,f){if(!ON||!ambG)return;if(TOUCH){v*=1.6;f=Math.max(f*2.4,900)}try{var n=AC.currentTime;ambG.gain.linearRampToValueAtTime(v,n+1.3);ambF.frequency.linearRampToValueAtTime(f,n+1.3)}catch(e){}}
+$('#snd').onclick=function(){mk();ON=!ON;this.setAttribute('aria-pressed',ON);
+ try{localStorage.setItem('venting_sound_enabled',ON?'1':'0')}catch(e){}
+ this.setAttribute('aria-label',ON?'소리 끄기':'소리 켜기');
+ this.querySelector('.sl').textContent=ON?'ON':'OFF';
+ if(ON){
+  try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
+  unlockIOS();
+  var r=AC.resume();if(r&&r.catch)r.catch(function(){});
+  ambG.gain.value=TOUCH?.14:.085;S.chime()}else if(ambG)ambG.gain.value=0};
+/* iOS keeps Web Audio silent in ring-silent mode until a media element has played */
+var iosEl=null;
+function unlockIOS(){try{
+ if(!iosEl){var n=4410,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=function(o,t){for(var i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,44100,true);v.setUint32(28,88200,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  iosEl=new Audio(URL.createObjectURL(new Blob([b],{type:'audio/wav'})));iosEl.loop=true;iosEl.setAttribute('playsinline','')}
+ var pr=iosEl.play();if(pr&&pr.catch)pr.catch(function(){});
+}catch(e){}}
+
+/* ===================== loader ===================== */
+var lc=$('#lc'),lx=lc.getContext('2d'),LP=[],LW,LH,prog=0;
+function lrs(){LW=lc.width=lc.offsetWidth;LH=lc.height=lc.offsetHeight}
+lrs();addEventListener('resize',lrs);
+for(var i=0;i<120;i++)LP.push({x:Math.random(),y:Math.random(),r:Math.random()*2.1+.5,vy:Math.random()*.0009+.0002,a:Math.random()*.5+.2});
+/* things that pile up at the bottom while it loads */
+var PILE=[
+ {l:'4%',w:'17%',b:'0%',r:-7,s:'<svg viewBox="0 0 200 170"><rect x="10" y="48" width="180" height="118" fill="#9C7A50"/><polygon points="10,48 100,8 190,48 100,88" fill="#B8925F"/><polygon points="100,88 190,48 190,166 100,206" fill="#866745"/><rect x="92" y="62" width="18" height="104" fill="#DCCBA4" opacity=".8"/></svg>'},
+ {l:'20%',w:'12%',b:'1%',r:9,s:'<svg viewBox="0 0 150 150"><path d="M20 24h110v116l-14-9-14 9-14-9-13 9-14-9-14 9-14-9-13 9z" fill="#EFE9D6"/><g stroke="#C0B79E" stroke-width="4"><path d="M38 56h74M38 80h74M38 104h50"/></g></svg>'},
+ {l:'31%',w:'15%',b:'0%',r:-4,s:'<svg viewBox="0 0 200 120"><ellipse cx="100" cy="76" rx="86" ry="30" fill="#C9C3B4"/><path d="M14 76a86 30 0 0 0 172 0z" fill="#E3DDCD"/><ellipse cx="100" cy="70" rx="86" ry="30" fill="#F1ECDD"/><ellipse cx="100" cy="70" rx="56" ry="19" fill="#DCD5C3"/></svg>'},
+ {l:'45%',w:'16%',b:'2%',r:6,s:'<svg viewBox="0 0 180 190"><path d="M90 34c42 0 70 40 70 82 0 32-29 48-70 48s-70-16-70-48c0-42 28-82 70-82z" fill="#3E464B"/><path d="M67 38l23-26 23 26-14 7-9-10-9 10z" fill="#4E585E"/></svg>'},
+ {l:'59%',w:'10%',b:'0%',r:-11,s:'<svg viewBox="0 0 110 160"><rect x="22" y="26" width="66" height="120" rx="8" fill="#A8663A"/><rect x="22" y="26" width="66" height="22" rx="8" fill="#C2805020"/><rect x="30" y="54" width="50" height="40" fill="#EFE4CE" opacity=".85"/><ellipse cx="55" cy="26" rx="33" ry="9" fill="#C8835A"/></svg>'},
+ {l:'68%',w:'14%',b:'1%',r:5,s:'<svg viewBox="0 0 170 130"><rect x="12" y="34" width="146" height="84" rx="6" fill="#8A93A0"/><rect x="12" y="34" width="146" height="18" rx="6" fill="#9DA7B4"/><rect x="48" y="64" width="74" height="34" fill="#E6E2D6"/><rect x="62" y="74" width="46" height="12" fill="#B4712F"/></svg>'},
+ {l:'81%',w:'13%',b:'0%',r:-6,s:'<svg viewBox="0 0 150 160"><rect x="16" y="40" width="118" height="108" fill="#F2EDDC"/><rect x="16" y="40" width="118" height="26" fill="#2B211A"/><g stroke="#C0B79E" stroke-width="4"><path d="M34 86h82M34 108h82M34 130h54"/></g></svg>'},
+ {l:'27%',w:'11%',b:'9%',r:14,s:'<svg viewBox="0 0 130 110"><path d="M12 48c0-16 14-28 32-28h42c18 0 32 12 32 28v34c0 10-8 18-18 18H30c-10 0-18-8-18-18z" fill="#7C8A72"/><path d="M12 56h106v12H12z" fill="#8E9C83"/></svg>'},
+ {l:'52%',w:'12%',b:'11%',r:-13,s:'<svg viewBox="0 0 140 120"><rect x="14" y="36" width="112" height="70" rx="10" fill="#B9825A"/><rect x="14" y="36" width="112" height="16" rx="8" fill="#CE9468"/><rect x="36" y="62" width="68" height="10" fill="#EFE4CE" opacity=".7"/></svg>'},
+ {l:'72%',w:'10%',b:'10%',r:11,s:'<svg viewBox="0 0 120 120"><circle cx="60" cy="62" r="46" fill="#9FA8A2"/><circle cx="60" cy="62" r="30" fill="#C2CAC4"/><circle cx="60" cy="62" r="9" fill="#6F7873"/></svg>'}
+];
+var pileEl=$('#pile'),dropped=0;
+PILE.forEach(function(o){
+ var d=document.createElement('div');
+ d.className='it';
+ d.style.cssText='left:'+o.l+';bottom:'+o.b+';width:'+o.w+';--r:'+o.r+'deg';
+ d.innerHTML=o.s;
+ pileEl.appendChild(d)});
+var pileKids=[].slice.call(pileEl.children);
+function dropTo(p){
+ var want=Math.min(PILE.length,Math.floor(p*(PILE.length+.4)));
+ while(dropped<want){pileKids[dropped].classList.add('d');dropped++}
+}
+var t0=null,done=false;
+function loop(ts){
+ if(t0===null)t0=ts;
+ var e=(ts-t0)/3100;prog=Math.min(1,e<1?1-Math.pow(1-e,3):1);
+ var n=Math.round(prog*100);
+ $('#num').textContent=n;$('#barl').style.width=(prog*100)+'%';dropTo(prog);
+ lx.clearRect(0,0,LW,LH);
+ for(var i=0;i<LP.length;i++){var p=LP[i];p.y-=p.vy*(1+prog*7);if(p.y<0)p.y=1;
+  lx.fillStyle='rgba(150,108,70,'+(p.a*(1-prog)).toFixed(3)+')';
+  lx.beginPath();lx.arc(p.x*LW,p.y*LH,p.r,0,6.3);lx.fill()}
+ if(prog<1){requestAnimationFrame(loop)}else if(!done){done=true;
+  dropTo(1);setTimeout(function(){$('#load').classList.add('out');$('#bar').classList.add('on');$('#main').classList.add('on');
+   document.body.classList.remove('lock');scrollTo(0,0);reveal();hero()},620)}}
+if(RM){dropTo(1);$('#load').classList.add('out');$('#bar').classList.add('on');$('#main').classList.add('on');document.body.classList.remove('lock')}
+else requestAnimationFrame(loop);
+
+/* ===================== menu ===================== */
+$$('#menu .t').forEach(function(el){
+ var w=el.dataset.t,h='';
+ for(var i=0;i<w.length;i++)h+='<span style="transition-delay:'+(.12+i*.07)+'s">'+w[i]+'</span>';
+ el.innerHTML=h});
+function menu(open){
+ $('#menu').classList.toggle('on',open);
+ $('#menu').setAttribute('aria-hidden',!open);
+ $('#mbtn').setAttribute('aria-expanded',open);
+ $('#mbtn').textContent=open?'CLOSE':'MENU';
+ document.body.classList.toggle('lock',open);
+ if(open)S.open()}
+$('#mbtn').onclick=function(){menu($('#menu').className.indexOf('on')<0)};
+$('#mclose').onclick=function(){S.clk();menu(false)};
+$('#menu').addEventListener('click',function(e){if(e.target===this)menu(false)});
+addEventListener('keydown',function(e){if(e.key==='Escape')menu(false)});
+
+/* ===================== routing ===================== */
+var cur='home';
+function go(n){
+ menu(false);S.clk();
+ $$('.view').forEach(function(v){v.classList.toggle('on',v.id==='v-'+n)});
+ $$('#menu .mi').forEach(function(b){b.setAttribute('aria-current',b.dataset.go===n)});
+ cur=n;scrollTo(0,0);history.replaceState(null,'','#'+n);
+ air(n==='home'?.085:.17,n==='home'?250:800);
+ document.body.classList.toggle('home',n==='home');
+ document.body.classList.toggle('story',n==='story');
+ document.body.classList.toggle('trial',n==='trial');
+ if(n!=='story'){clearTimeout(endT);document.body.classList.remove('endlock')}
+ document.documentElement.classList.toggle('snap',SNAP&&n==='story');
+ reveal();if(n==='home')hero();
+ document.body.classList.remove('onscene');
+ if(n==='story'){vi=-1;stepAt=0;jumpUntil=0;scrollTo(0,0);setTimeout(function(){scrollTo(0,0);vscroll()},30)}
+ if(n!=='trial'&&typeof TR!=='undefined'&&TR.leave)TR.leave();
+ if(n==='trial'){TR.enter();document.body.classList.add('onscene')}}
+$$('[data-go]').forEach(function(b){b.addEventListener('click',function(){
+  if(b.hasAttribute('data-reload')){S.clk();document.body.style.transition='opacity .35s';document.body.style.opacity=0;
+   setTimeout(function(){location.replace(location.pathname+location.search)},340);return}
+  go(b.dataset.go)});
+ if(b.classList.contains('mi')||b.classList.contains('ir')||b.classList.contains('bm'))b.addEventListener('pointerenter',S.hov)});
+
+/* ===================== reveal ===================== */
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+$$('.hd h3,.ph h2').forEach(function(h){
+ if(h.querySelector('.ri'))return;
+ h.innerHTML='<span class="ri"><i>'+h.textContent+'</i></span>'});
+function reveal(){$$('.rv,.pull,.bigmenu').forEach(function(x){if(!x.classList.contains('in'))io.observe(x)})}
+
+/* ===================== home hero carousel ===================== */
+var OBJ=[
+ {n:'개봉하지 못한 상자',t:'감정 물건 · 1장',s:'<rect x="40" y="96" width="220" height="150" fill="#9C7A50"/><polygon points="40,96 150,52 260,96 150,140" fill="#B8925F"/><polygon points="150,140 260,96 260,246 150,290" fill="#866745"/><rect x="138" y="118" width="24" height="160" fill="#DCCBA4" opacity=".8"/>'},
+ {n:'날짜가 이어지는 메모',t:'맥락 물건 · 2장',s:'<rect x="56" y="40" width="190" height="240" fill="#EFE9D6" transform="rotate(-5 150 160)"/><g transform="rotate(-5 150 160)" stroke="#B9B099" stroke-width="4"><path d="M76 92h150M76 124h150M76 156h150M76 188h110"/></g><rect x="56" y="40" width="190" height="34" fill="#C2B9A0" transform="rotate(-5 150 160)"/>'},
+ {n:'돌려보낼 그릇',t:'보호 물건 · 프롤로그',s:'<ellipse cx="150" cy="206" rx="112" ry="40" fill="#C9C3B4"/><path d="M38 206a112 40 0 0 0 224 0z" fill="#E3DDCD"/><ellipse cx="150" cy="200" rx="112" ry="40" fill="#F1ECDD"/><ellipse cx="150" cy="200" rx="76" ry="26" fill="#DCD5C3"/><circle cx="150" cy="118" r="17" fill="none" stroke="#B4712F" stroke-width="4" stroke-dasharray="7 7"/>'},
+ {n:'지나치게 세분화된 라벨',t:'3장 · 통제',s:'<rect x="34" y="70" width="232" height="190" fill="#7E8A90"/><g fill="#E6E2D6"><rect x="50" y="86" width="96" height="76"/><rect x="154" y="86" width="96" height="76"/><rect x="50" y="170" width="96" height="76"/><rect x="154" y="170" width="96" height="76"/></g><g fill="#B4712F"><rect x="62" y="98" width="52" height="11"/><rect x="166" y="98" width="52" height="11"/><rect x="62" y="182" width="52" height="11"/><rect x="166" y="182" width="52" height="11"/></g>'},
+ {n:'견적서',t:'작업 전 · 조건과 보수',s:'<rect x="62" y="36" width="178" height="248" fill="#F2EDDC" transform="rotate(4 150 160)"/><g transform="rotate(4 150 160)"><rect x="62" y="36" width="178" height="40" fill="#16191C"/><g stroke="#C0B79E" stroke-width="4"><path d="M82 110h138M82 140h138M82 170h138M82 200h90"/></g><rect x="82" y="226" width="138" height="34" fill="none" stroke="#B4712F" stroke-width="3"/></g>'},
+ {n:'영수증',t:'작업 후 · 실제 보수',s:'<path d="M66 30h168v250l-21-14-21 14-21-14-21 14-21-14-21 14-21-14-21 14z" fill="#EFEADA"/><g stroke="#C0B79E" stroke-width="4"><path d="M88 86h124M88 116h124M88 146h124"/></g><rect x="88" y="178" width="124" height="38" fill="#16191C"/>'},
+ {n:'쓰레기봉투',t:'기능 물건 · 치워야 할 양',s:'<path d="M150 70c58 0 96 54 96 112 0 44-40 66-96 66s-96-22-96-66c0-58 38-112 96-112z" fill="#3A4247"/><path d="M118 74l32-34 32 34-20 10-12-14-12 14z" fill="#4A545A"/><ellipse cx="118" cy="168" rx="20" ry="30" fill="#4A545A" opacity=".55"/>'}];
+$('#rail').innerHTML=OBJ.map(function(o,i){
+ var rot=(i%2?1:-1)*(4+(i%3)*4);
+ if(TOUCH)return '<div class="obj tch"><svg viewBox="0 0 300 320" style="transform:rotate('+rot+'deg)">'
+  +'<defs><filter id="of'+i+'" filterUnits="userSpaceOnUse" x="-110" y="-110" width="520" height="540">'
+  +'<feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="9" result="n"/>'
+  +'<feDisplacementMap in="SourceGraphic" in2="n" scale="6.5" xChannelSelector="R" yChannelSelector="G" result="d"/>'
+  +'<feDropShadow in="d" dx="0" dy="32" stdDeviation="20" flood-color="rgb(60,26,10)" flood-opacity=".34"/>'
+  +'</filter></defs><g filter="url(#of'+i+')">'+o.s+'</g></svg></div>';
+ return '<div class="obj"><svg viewBox="0 0 300 320" style="transform:rotate('+rot+'deg)">'+o.s+'</svg></div>'}).join('');
+var rail=$('#rail'),track=$('#track'),last=-1,lastY=0,snapAt=0,hm=null;
+function hero(){ if(cur!=='home') return; onScroll() }
+function onScroll(){
+ if(cur!=='home'||!track)return;
+ var objs=$$('.obj'),first=objs[0];if(!first)return;
+ var span=track.offsetHeight-innerHeight;if(span<=0)return;
+ var p=Math.max(0,Math.min(1,-track.getBoundingClientRect().top/span));
+ if(!hm||hm.vw!==innerWidth){hm={vw:innerWidth,mg:parseFloat(getComputedStyle(first).marginLeft)||0,w:first.offsetWidth,pw:rail.parentNode.offsetWidth}}
+ var mg=hm.mg,w=hm.w;
+ var step=w+mg*2,shift=(hm.pw-w)/2-mg;
+ rail.style.transform='translateX('+(shift-p*step*(objs.length-1)).toFixed(1)+'px)';
+ var a=Math.round(p*(objs.length-1));
+ if(a!==last)for(var i=0;i<objs.length;i++)objs[i].style.opacity=(i===a?1:.28);
+ if(a!==last){last=a;$('#ocap').innerHTML='<b>'+OBJ[a].n+'</b>'}
+ var bm=$('#bigmenu');
+ if(!bm)return;
+ var br=bm.getBoundingClientRect();
+ if(!bm.classList.contains('in')&&br.top<innerHeight*.88)bm.classList.add('in');
+ if(snapCheck(br))bm.classList.add('in');
+ document.body.classList.toggle('onscene',br.top<=1&&br.bottom>=innerHeight-1);
+}
+/* a panel that is starting to show pulls itself up to fill the screen */
+function snapCheck(r){
+ var dir=scrollY-lastY;lastY=scrollY;
+ if(RM||dir<=0||Date.now()<snapAt)return false;
+ if(r.top>4&&r.top<innerHeight*.85){
+  snapAt=Date.now()+1300;
+  scrollTo({top:scrollY+r.top,behavior:'smooth'});
+  return true}
+ return false}
+function pscroll(){
+ if(cur!=='play')return;
+ var ps=$('.pstage');if(!ps)return;
+ var r=ps.getBoundingClientRect();
+ snapCheck(r);
+ document.body.classList.toggle('onscene',r.top<=1&&r.bottom>=innerHeight-1);
+}
+addEventListener('scroll',pscroll,{passive:true});
+var hq=false;
+addEventListener('scroll',function(){if(RM||hq)return;hq=true;
+ requestAnimationFrame(function(){hq=false;onScroll()})},{passive:true});
+addEventListener('resize',function(){hm=null;onScroll()});
+/* phones: when a flick settles between two objects, ease to the nearest one */
+if(TOUCH){var hIdle=null;
+ addEventListener('scroll',function(){
+  if(cur!=='home'||RM)return;clearTimeout(hIdle);
+  hIdle=setTimeout(function(){
+   var span=track.offsetHeight-innerHeight,top=scrollY+track.getBoundingClientRect().top;
+   var N=OBJ.length-1,p=(scrollY-top)/span;
+   if(p<=0||p>=1)return;
+   var y=Math.round(top+span*Math.round(p*N)/N);
+   if(Math.abs(y-scrollY)>3)scrollTo({top:y,behavior:'smooth'});
+  },170)},{passive:true})}
+addEventListener('load',function(){hm=null;onScroll()});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){hm=null;onScroll()});
+setTimeout(function(){hm=null;onScroll()},600);
+
+/* ===================== room svg (demo) ===================== */
+function iso(x,y,z){return [500+38*x-38*y,250+22*x+22*y-20*z]}
+function P(a){return a[0].toFixed(1)+','+a[1].toFixed(1)}
+function col(L,t,m){var v=Math.max(0,Math.min(1,L*m))*255;
+ return 'rgb('+Math.round(Math.max(0,Math.min(255,v*1.1+14+t*26)))+','+Math.round(Math.max(0,Math.min(255,v*1.02+8+t*5)))+','+Math.round(Math.max(0,Math.min(255,v*.92+3-t*22)))+')'}
+var F=[
+ {x:.3,y:.4,sx:1.0,sy:2.4,sz:3.0,m:1},{x:.3,y:4.6,sx:2.4,sy:3.3,sz:.8,m:1},
+ {x:3.7,y:.3,sx:2.6,sy:1.1,sz:1.2,m:1},{x:7.5,y:.3,sx:2.2,sy:1.0,sz:1.9,m:1},
+ {x:3.2,y:3.4,sx:4.4,sy:3.6,sz:.04,m:.9},{x:4.4,y:1.9,sx:.85,sy:.85,sz:1.0,m:1},
+ {x:7.2,y:3.4,sx:.32,sy:.32,sz:.45,th:.12,m:.8},{x:6.1,y:7.0,sx:1.2,sy:.9,sz:.18,th:.24,m:.8},
+ {x:6.6,y:5.1,sx:1.1,sy:1.1,sz:1.1,th:.34,m:.75},{x:4.0,y:2.2,sx:.34,sy:.34,sz:.4,th:.42,m:.8},
+ {x:2.5,y:6.3,sx:1.7,sy:1.3,sz:.5,th:.52,m:.8},{x:8.3,y:7.4,sx:1.0,sy:1.0,sz:1.0,th:.62,m:.75},
+ {x:5.0,y:4.2,sx:1.2,sy:1.0,sz:.35,th:.72,m:.8},{x:1.7,y:2.1,sx:1.1,sy:1.1,sz:.9,th:.84,m:.85},
+ {x:8.3,y:5.3,sx:.9,sy:.9,sz:.7,th:.94,m:.85},
+ {x:4.7,y:5.6,sx:1.2,sy:1.2,sz:1.0,m:1.1,to:[1.6,3.2]},
+ {x:5.3,y:.6,sx:.62,sy:.62,sz:.3,z:1.2,m:1.25,prot:1}];
+function draw(el,p,tint,gone,light,hide){ if(!el) return;
+ var L=.17+.46*p,s='',i,fid='rgh_'+(el.id||'x');
+ s+='<defs><filter id="'+fid+'" x="-6%" y="-6%" width="112%" height="112%">'
+  +'<feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="'+(light?1:2)+'" seed="5" result="n"/>'
+  +'<feDisplacementMap in="SourceGraphic" in2="n" scale="'+(light?3.5:5)+'" xChannelSelector="R" yChannelSelector="G"/>'
+  +'</filter></defs><g filter="url(#'+fid+')" stroke-linejoin="round" stroke-linecap="round">';
+ s+='<polygon points="'+P(iso(0,0,0))+' '+P(iso(10,0,0))+' '+P(iso(10,10,0))+' '+P(iso(0,10,0))+'" fill="'+col(L,tint,.92)+'"/>';
+ s+='<polygon points="120,470 500,250 500,50 120,270" fill="'+col(L,tint,1.34)+'"/>';
+ s+='<polygon points="500,250 880,470 880,270 500,50" fill="'+col(L,tint,1.06)+'"/>';
+ var gl=col(.46+.46*p,tint*.5,1.5);
+ s+='<polygon points="633,257 747,323 747,213 633,147" fill="'+gl+'"/>';
+ s+='<path d="M633 147L747 213M690 180L690 290" stroke="'+col(L,tint,.7)+'" stroke-width="5"/>';
+ s+='<polygon points="633,257 747,323 747,213 633,147" fill="none" stroke="'+col(L,tint,.62)+'" stroke-width="7"/>';
+ s+='<polygon points="633,257 747,323 598.8,492 492.4,395.2" fill="'+gl+'" opacity="'+(.06+.27*p).toFixed(2)+'"/>';
+ var ls=F.filter(function(o){return !(o.prot&&gone)}).slice()
+  .sort(function(a,b){return (a.x+a.sx/2+a.y+a.sy/2)-(b.x+b.sx/2+b.y+b.sy/2)});
+ for(i=0;i<ls.length;i++){var o=ls[i],op=1,ox=o.x,oy=o.y;
+  if(hide){if(hide[F.indexOf(o)]==='gone')continue}
+  else if(o.th!=null){op=p<o.th?1:Math.max(0,1-(p-o.th)/.09);if(op<=0)continue}
+  if(o.to){var k=hide?(hide[F.indexOf(o)]==='moved'?1:0):Math.min(1,p/.9);ox=o.x+(o.to[0]-o.x)*k;oy=o.y+(o.to[1]-o.y)*k}
+  var z0=o.z||0,z1=z0+o.sz,x1=ox+o.sx,y1=oy+o.sy,m=o.m,st=col(L,tint,.42*m);
+  s+='<g opacity="'+op.toFixed(2)+'">'
+   +'<polygon points="'+P(iso(ox,oy,z1))+' '+P(iso(x1,oy,z1))+' '+P(iso(x1,y1,z1))+' '+P(iso(ox,y1,z1))+'" fill="'+col(L,tint,1.42*m)+'" stroke="'+st+'" stroke-width="1.7"/>'
+   +'<polygon points="'+P(iso(x1,oy,z1))+' '+P(iso(x1,y1,z1))+' '+P(iso(x1,y1,z0))+' '+P(iso(x1,oy,z0))+'" fill="'+col(L,tint,1.0*m)+'" stroke="'+st+'" stroke-width="1.7"/>'
+   +'<polygon points="'+P(iso(ox,y1,z1))+' '+P(iso(x1,y1,z1))+' '+P(iso(x1,y1,z0))+' '+P(iso(ox,y1,z0))+'" fill="'+col(L,tint,.68*m)+'" stroke="'+st+'" stroke-width="1.7"/>';
+  if(o.prot){var c=iso(ox+o.sx/2,oy+o.sy/2,z1+.9);
+   s+='<circle cx="'+c[0].toFixed(0)+'" cy="'+c[1].toFixed(0)+'" r="13" fill="none" stroke="'+col(.82,tint,1)+'" stroke-width="2" stroke-dasharray="4 4"/>'}
+  s+='</g>'}
+ var du='';
+ if(!RM&&!light){var dz=1-p;for(i=0;i<15;i++){var dx2=500+(i*83%320)-120,dy2=180+(i*127%300),r2=(i%3)*.5+.9;
+  du+='<circle cx="'+dx2+'" cy="'+dy2+'" r="'+r2+'" fill="rgba(240,232,210,'+(.5*dz+.1).toFixed(2)+')">'
+   +'<animate attributeName="cy" values="'+dy2+';'+(dy2-42)+';'+dy2+'" dur="'+(7+i%5)+'s" repeatCount="indefinite"/>'
+   +'<animate attributeName="opacity" values="0;1;0" dur="'+(5+i%4)+'s" repeatCount="indefinite"/></circle>'}}
+ el.innerHTML=s+'</g>'+du}
+
+/* ===================== concept: room anatomy + tone rooms ===================== */
+draw($('#svA'),.34,0,false);
+/* one room: the slider moves brightness now, the day's end sets the temperature */
+(function(){
+ var el=$('#svT'),P=.5,T=0,from=0,to=0,t0=0,raf=null,pend=false;
+ function paint(){if(pend)return;pend=true;requestAnimationFrame(function(){pend=false;draw(el,P,T,false)})}
+ paint();
+ $('#tp').addEventListener('input',function(){P=+this.value/100;$('#tpv').textContent=this.value+'%';paint()});
+ var NOTE=['깨끗해진 만큼 밝아졌을 뿐, 색은 생기지 않았어요. 상담하지 않은 건 벌이 아니라서 화면도 중립에 머물러요.',
+  '따뜻해지고 채도가 올라갔어요. 의뢰인이 다음 행동 하나를 스스로 정했다는 뜻이에요.',
+  '푸른 기가 돌며 가라앉았어요. 밝기는 청소 결과를 따르니까, 깨끗하지만 차가운 방이 남아요.'];
+ function ease(x){return x<.5?4*x*x*x:1-Math.pow(2-2*x,3)/2}
+ function step(ts){
+  var k=Math.min(1,(ts-t0)/1100);
+  T=from+(to-from)*ease(k);
+  draw(el,P,T,false);
+  if(k<1)raf=requestAnimationFrame(step);else raf=null}
+ var bs=$$('#tcs button'),slate=$('#tslate');
+ bs.forEach(function(b,i){b.onclick=function(){
+  bs.forEach(function(x,j){x.setAttribute('aria-pressed',i===j)});
+  S.pop();
+  slate.classList.add('on');
+  setTimeout(function(){slate.classList.remove('on')},1700);
+  $('#tnote').textContent=NOTE[i];
+  from=T;to=(i===1?1:(i===2?-1:0));
+  if(raf)cancelAnimationFrame(raf);
+  t0=performance.now();raf=requestAnimationFrame(step)}});
+})();
+(function(){
+ var hots=$$('.anatsc .hot'),rows=$$('.anl li'),k=0,timer=null;
+ function set(i){k=i;
+  hots.forEach(function(h,j){h.classList.toggle('on',j===i)});
+  rows.forEach(function(r,j){r.classList.toggle('on',j===i)})}
+ function play(){stop();timer=setInterval(function(){set((k+1)%hots.length)},3800)}
+ function stop(){if(timer){clearInterval(timer);timer=null}}
+ hots.concat($$('.anl button')).forEach(function(b){
+  b.addEventListener('pointerenter',function(){stop();set(+b.dataset.k||+b.getAttribute('data-k')||0)});
+  b.addEventListener('click',function(){stop();set(+b.getAttribute('data-k'));S.pop()})});
+ var an=$('.anat');
+ if(an){an.addEventListener('pointerleave',play)}
+ set(0);play();
+})();
+
+/* ===================== demo ===================== */
+var sayKey='',memo={};
+function pick(a,slot){
+ var i=Math.floor(Math.random()*a.length);
+ if(a.length>1&&a[i]===memo[slot])i=(i+1)%a.length;
+ memo[slot]=a[i];return a[i]}
+var SAY={
+ pr:['그릇은… 제가 돌려보내야 하는 거였는데요.',
+     '나머지는 깔끔해요. 그런데 그 그릇이 안 보이네요.',
+     '버리신 것 같네요. 적어 둔 거였는데…'],
+ perfect:['들어오자마자 숨이 쉬어졌어요. 이렇게까지 해 주실 줄은 몰랐어요.',
+     '창틀까지… 제가 몇 년을 미뤄 둔 자리예요.',
+     '사진 찍어서 가족한테 보냈어요. 고맙습니다.'],
+ five:['부탁드린 창틀까지 해 주셨네요. 감사합니다.',
+     '요청한 것보다 더 해 주셨어요.',
+     '다음에도 부탁드리고 싶어요.'],
+ four:['요청한 부분은 잘 처리되었습니다. 감사합니다.',
+     '충분해요. 이 정도면 지낼 만하겠어요.',
+     '깔끔하네요. 수고하셨습니다.'],
+ low:['조건에 적어 둔 부분이 덜 끝난 것 같습니다.',
+     '동선은… 아직 그대로인 것 같은데요.',
+     '죄송한데, 주방은 손을 안 대신 건가요?'],
+ ok:[' 그리고… 이야기 들어 주셔서 고마웠어요.',
+     ' 상자는 제가 열어 보기로 했어요.',
+     ' 오늘 처음으로 그 얘길 입 밖에 냈네요.'],
+ bad:[' ……다음엔 그냥 청소만 부탁드릴게요.',
+     ' ……아까 그 얘기는 안 들은 걸로 해 주세요.',
+     ' ……네. 수고하셨습니다.']};
+var D={p:0,sp:false,pr:false,cs:0};
+function seg(id,cb){var bs=$$('#'+id+' button');bs.forEach(function(b,i){b.onclick=function(){
+ bs.forEach(function(x,j){x.setAttribute('aria-pressed',i===j)});S.pop();cb(i)}})}
+function upd(){
+ draw($('#svD'),D.p/100,D.cs===1?1:(D.cs===2?-1:0),D.pr);
+ $('#pv').textContent=D.p+'%';
+ var base=D.p>=70?(D.sp?5:4):3,rate=Math.min(base,D.pr?4:5),clean=rate<=3?84:120,sum=clean;
+ var perfect=(D.p===100&&!D.pr&&D.sp);
+ if(D.sp)sum+=30; if(perfect)sum+=40; if(D.cs===1)sum+=25;
+ function row(k,v,cls){return '<div class="r'+(cls?' '+cls:'')+'"><span>'+k+'</span><span>'+v+'</span></div>'}
+ var L='';
+ L+=row('기본 청소비','$'+clean);
+ L+=row('평판 보정',rate<=3?'-30%':'없음',rate<=3?'warnx':'');
+ L+=row('특별 청소 주문 수당',D.sp?'+$30':'—');
+ L+=row('완벽한 청소 수당',perfect?'+$40':'—');
+ L+=row('팁',D.cs===1?'+$25':'$0');
+ L+=row('보호 물건',D.pr?'폐기 · 상한 4점':'지킴',D.pr?'warnx':'');
+ L+='<div class="r tot"><span>실제 보수</span><span>$'+sum+'</span></div>';
+ L+=row('의뢰인 평점','<span class="star">'+'★'.repeat(rate)+'☆'.repeat(5-rate)+'</span>');
+ $('#rc').innerHTML=L;
+ var key=[D.pr?1:0,perfect?1:0,rate,D.cs].join('-');
+ if(key!==sayKey){
+  sayKey=key;
+  var pool=D.pr?SAY.pr:perfect?SAY.perfect:rate>=5?SAY.five:rate>=4?SAY.four:SAY.low;
+  var line=pick(pool,'a')+(D.cs===1?pick(SAY.ok,'b'):D.cs===2?pick(SAY.bad,'b'):'');
+  var mood=D.cs===1?'ok':(D.cs===2?'bad':'');
+  var say=$('#say');
+  say.className='say '+mood;
+  say.innerHTML='<b>의뢰인</b>“'+line+'”';
+  say.style.animation='none';void say.offsetWidth;say.style.animation='';
+ }}
+var updQ=false;
+function updSoon(){if(updQ)return;updQ=true;requestAnimationFrame(function(){updQ=false;upd()})}
+$('#pg').addEventListener('input',function(){var o=D.p;D.p=+this.value;if(Math.abs(D.p-o)>=4)S.brush();updSoon()});
+seg('sp',function(i){D.sp=i===1;upd()});seg('pr',function(i){D.pr=i===1;upd()});seg('cs',function(i){D.cs=i;upd()});
+upd();
+
+/* ===================== stamina ===================== */
+var ST=[[100,'일찍 접으면 다음 날 체력이 가득 차요. 그만큼 내일 할 수 있는 작업량의 상한도 높아져요.'],
+ [85,'평범한 하루예요. 연장도 무리도 없이, 예상한 소요일대로 흘러가요.'],
+ [70,'늦게까지 남았어요. 연장분이 생기지만 다음 날이 무거워요. 소모품으로 메울 수는 있어도 대가가 따라요.']];
+seg('ed',function(i){$('#gg').style.width=ST[i][0]+'%';$('#hp').textContent=ST[i][0];$('#en1').textContent=ST[i][1];$('#ext').style.display=i===2?'block':'none'});
+seg('ex',function(i){$('#ed2').textContent=i===0?'같은 품질을 더 적은 일수로 끝내요. 남은 일수는 휴무나 다음 의뢰가 돼요.':'단서나 의뢰인에 대한 정보를 발견하고 다음 날 활용해요. 사연 단서 후보가 되기도 해요.'});
+
+/* ===================== story viewer ===================== */
+var SC=[
+ {k:'하루',e:'A DAY',s:'반복',p:.45,t:0,
+  q:'의뢰 하나는 네 걸음이에요.',
+  steps:[['01','견적서를 읽어요'],['02','조사하고 치워요'],['03','원하면 한마디 건네요'],['04','영수증과 평점을 받아요']]},
+ {k:'프롤로그',e:'PROLOGUE',s:'1년 밖',p:.88,t:.9,
+  q:'남의 방에 들어가기 전에, 내 방부터 치워요.',
+  d:'가족이 보낸 상자를 정리하는 동안 전화가 와요. 그 그릇은 꼭 돌려보내 달라고요. 보호 물건을 배우는 연습 구간이에요.'},
+ {k:'급하게 비워야 하는 방',e:'CHAPTER 1',s:'1분기',p:.18,t:0,
+  q:'빨리 치우는 것과 잘 정리하는 것은 같을까요?',
+  d:'결정을 미뤄 온 사람의 방이에요. 버리지 못한 물건이 기억과 불안을 대신 붙들고 있어요.'},
+ {k:'남겨진 물건이 많은 방',e:'CHAPTER 2',s:'2분기',p:.5,t:-.3,
+  q:'남의 기억을 정리해도 될까요?',
+  d:'떠난 사람과 지금의 생활 사이에서 멈춰 있어요. 깨끗한 방보다, 다음 행동을 할 수 있는 빈 공간이 좋은 결과예요.'},
+ {k:'완벽하게 정리된 혼란',e:'CHAPTER 3',s:'3분기',p:1,t:-1,
+  q:'깔끔함은 회복의 증거일까요?',
+  d:'불안을 통제하려고 공간을 과하게 관리하는 방이에요. 여기선 더 깔끔하게 만드는 쪽이 오히려 조건을 어기는 일이 돼요.'},
+ {k:'사연',e:'CHAPTER 4',s:'4분기',p:.72,t:.4,
+  q:'내가 남긴 선택을 마주하고도, 이 일을 계속할까요?',
+  d:'1년 동안 스쳐 간 물건과 문장이 여기서 다시 모여요. 거대한 음모는 없어요. 쌓인 선택이 있을 뿐이에요.'},
+ {k:'결산',e:'THE LEDGER',s:'연말',p:.95,t:.7,
+  q:'1년의 영수증이에요.',
+  d:'번 돈과 지식, 그리고 남긴 태도를 돌아봐요. 시간이 다 된 건 실패가 아니에요.'},
+ {k:'엔딩',e:'ENDINGS',s:'여러 번의 1년',p:1,t:1,
+  q:'1년 뒤에도 이 일을 계속할지, 스스로 정해요.',
+  d:'청소에 집중한 해와 상담에 집중한 해는 전혀 다른 이야기가 돼요. 그만두고 떠나는 것도 엔딩이에요.'}];
+var vi=-1,viewer=$('.viewer'),stepAt=0,endT=null,jumpUntil=0;
+$('#vrail').innerHTML=SC.map(function(c,i){return '<button aria-pressed="false" aria-label="'+c.k+'"><i></i><span>'+c.k+'</span></button>'}).join('');
+var LEDGER='<div class="yrc"><h5>1년의 결산</h5><span class="sub">ANNUAL STATEMENT</span>'
+ +'<div class="r"><span>완료한 의뢰</span><span>34건</span></div>'
+ +'<div class="r"><span>기본 청소비</span><span>$4,120</span></div>'
+ +'<div class="r"><span>특별 청소 주문 수당</span><span>$690</span></div>'
+ +'<div class="r"><span>팁</span><span>$415</span></div>'
+ +'<div class="r"><span>완벽한 청소</span><span>6회</span></div>'
+ +'<div class="r"><span>보호 물건 폐기</span><span>2건</span></div>'
+ +'<div class="r"><span>평균 평점</span><span>4.3</span></div>'
+ +'<div class="r"><span>쌓은 지식</span><span>7</span></div>'
+ +'<div class="r tt"><b>한 해의 수입</b><b>$5,225</b></div>'
+ +'<span class="stamp">PAID IN FULL · YEAR CLOSED</span></div>';
+var C_DAY='<div class="pcard" style="--rot:-1.3deg"><h6>하루<span>A DAY</span></h6>'
+ +'<div class="tl"><i></i><i></i><i></i><i></i></div>'
+ +'<div class="tlb"><span>견적서</span><span>조사·청소</span><span>상담</span><span>정산</span></div>'
+ +'<div class="hpr"><span>다음 날 시작 체력</span><span>100 → 70</span></div>'
+ +'<div class="hpb"><i></i></div>'
+ +'<p class="note2">늦게까지 남으면 하루가 길어지는 대신 내일이 무거워져요.</p></div>';
+
+var C_PRO='<div class="pcard" style="--rot:1deg"><h6>프롤로그<span>INCOMING CALL</span></h6>'
+ +'<div class="call"><span class="av"></span><span><b>가족</b><i>통화 중…</i></span></div>'
+ +'<p class="typ">“그 그릇은 꼭 다시 보내 줘.”</p>'
+ +'<span class="tagp">보호 물건으로 표시됨</span></div>';
+
+var C_C1='<div class="pcard" style="--rot:-0.8deg"><h6>빨리 vs 잘<span>CHAPTER 1</span></h6><div class="cmp">'
+ +'<div class="cr f"><div class="ct2"><b>빠르게 비우기</b><span>2일 · 평점 3</span></div>'
+ +'<div class="cb"><i style="width:34%"></i></div></div>'
+ +'<div class="cr s2"><div class="ct2"><b>조사하고 분류</b><span>4일 · 평점 5</span></div>'
+ +'<div class="cb"><i style="width:92%"></i></div></div></div>'
+ +'<p class="note2">수입은 빠른 쪽이 나을 수 있어요. 대신 팁과 단서는 남지 않아요.</p></div>';
+
+var C_C2='<div class="pcard" style="--rot:1.3deg"><h6>남겨진 메모<span>CHAPTER 2</span></h6><div class="slips">'
+ +'<div class="slip" style="--r:-1.6deg"><b>3.02</b>약을 받아 옴</div>'
+ +'<div class="slip" style="--r:1.2deg"><b>3.09</b>약을 받아 옴</div>'
+ +'<div class="slip" style="--r:-.8deg"><b>3.16</b>약을 받아 옴</div>'
+ +'<div class="slip blank" style="--r:1.4deg"><b>3.23</b>…</div></div>'
+ +'<p class="note2">날짜가 이어지다 끊긴 자리가 이 방의 사정이에요.</p></div>';
+
+var C_C3='<div class="pcard" style="--rot:-1.1deg"><h6>라벨<span>CHAPTER 3</span></h6><div class="lgrid">'
+ +['A-1','A-2','A-3','A-4','B-1','B-2','B-3','B-4','C-1','C-2','C-3','C-4']
+   .map(function(t,k){return '<i style="animation-delay:'+(.25+k*.07).toFixed(2)+'s">'+t+'</i>'}).join('')
+ +'</div><p class="note2">전부 제자리에 있어요. 쓸 수 있는 건 하나도 없고요.</p></div>';
+
+var C_C4='<div class="pcard" style="--rot:0.9deg"><h6>회수한 단서<span>CHAPTER 4</span></h6><div class="clues">'
+ +'<i>영수증</i><i>메모</i><i>사진</i><i>상자</i><i>그릇</i></div>'
+ +'<div class="csum"><span>1년 동안 스쳐 간 것</span><b>5</b></div>'
+ +'<p class="note2">많이 모을수록 쓸 수 있는 선택지가 늘어나요.</p></div>';
+
+var C_END='<div class="pcard" style="--rot:1.1deg"><h6>엔딩<span>HOW IT ENDS</span></h6>'
+ +'<svg class="vt" viewBox="12 0 300 278" aria-label="엔딩이 갈리는 구조">'
+ +'<path d="M150 10 V52"/>'
+ +'<path d="M150 52 C150 88 56 82 56 120 V150"/>'
+ +'<path d="M150 52 C150 88 238 82 238 120 V148"/>'
+ +'<path d="M238 148 C238 176 178 174 178 200 V226"/>'
+ +'<path d="M238 148 C238 176 286 174 286 200 V226"/>'
+ +'<circle cx="56" cy="158" r="4.5"/><circle cx="178" cy="234" r="4.5"/><circle cx="286" cy="234" r="4.5"/>'
+ +'<text x="56" y="184" text-anchor="middle">떠난다</text>'
+ +'<text x="174" y="262" text-anchor="middle">청소 중심</text>'
+ +'<text x="292" y="262" text-anchor="end">상담 중심</text>'
+ +'</svg>'
+ +'<p class="note2">1년을 다 채우지 않고 떠나는 것도 엔딩이에요. 계속한다면, 어떤 방식으로 일했는지가 결말을 갈라요.</p></div>';
+
+var EXTRA={0:C_DAY,1:C_PRO,2:C_C1,3:C_C2,4:C_C3,5:C_C4,6:LEDGER,7:C_END};
+function fitExtra(){
+ var ex=$('#vextra'),card=$('.vcard');ex.style.transform='';
+ if(innerWidth>760||!ex.firstChild)return;
+ var top=card.getBoundingClientRect().top+(card.querySelector('h3').offsetTop||0)-14;
+ var r=ex.getBoundingClientRect(),room=top-r.top;
+ if(r.height>room){var k=Math.max(.45,room/r.height);ex.style.transformOrigin='top left';ex.style.transform='scale('+k.toFixed(3)+')'}
+}
+addEventListener('resize',fitExtra);
+function vgo(i,quiet){
+ if(i===vi)return; vi=i;var c=SC[i];
+ viewer.classList.remove('go');
+ draw($('#svS'),c.p,c.t,false,TOUCH);
+ $('#vttl').textContent=c.k;
+ $('#ven').textContent=c.e.split('').join(' ');
+ $('#vq').textContent=c.q;
+ $('#vd').textContent=c.d||'';
+ $('#vd').style.display=c.d?'block':'none';
+ $('#vsteps').innerHTML=c.steps?c.steps.map(function(s){return '<span><b>'+s[0]+'</b>'+s[1]+'</span>'}).join(''):'';
+ $('#vsteps').style.display=c.steps?'grid':'none';
+ var ex=$('#vextra');
+ ex.innerHTML=EXTRA[i]||'';
+ viewer.classList.toggle('hasx',!!EXTRA[i]);
+ requestAnimationFrame(fitExtra);setTimeout(fitExtra,1300);
+ $$('#vrail button').forEach(function(b,j){b.setAttribute('aria-pressed',i===j)});
+ requestAnimationFrame(function(){requestAnimationFrame(function(){viewer.classList.add('go')})});
+ if(!quiet)S.pop();
+}
+/* the viewer pins to the whole screen; page scroll moves through the scenes */
+var vtrack=$('#vtrack');
+(function(){var i,d;
+ for(i=0;i<SC.length;i++){d=document.createElement('div');d.className='vsp'+(i?'':' first');
+  d.style.height=(i<SC.length-1?115:100)+'svh';vtrack.appendChild(d)}})();
+function vTop(){return scrollY+vtrack.getBoundingClientRect().top}
+function vSpan(){return Math.max(1,vtrack.offsetHeight-innerHeight)}
+function vscroll(){
+ if(cur!=='story')return;
+ var r=vtrack.getBoundingClientRect(),p=Math.max(0,Math.min(1,-r.top/vSpan()));
+ $('#vprog').style.width=(p*100).toFixed(2)+'%';
+ document.body.classList.toggle('onscene',r.top<=1&&r.bottom>=innerHeight-1);
+ var N=SC.length-1,span=vSpan(),top=vTop(),now=Date.now();
+ var want=Math.round(p*N);
+ if(vi>=0&&now>=jumpUntil){
+  if(now<stepAt)want=vi;
+  else if(want>vi+1)want=vi+1;
+  else if(want<vi-1)want=vi-1;
+ }
+ if(want!==vi&&vi>=0)stepAt=now+(want===N?1500:560);
+ if(want===N&&vi!==N&&vi>=0){
+  document.body.classList.add('endlock');
+  clearTimeout(endT);endT=setTimeout(function(){document.body.classList.remove('endlock')},1800);
+ }
+ vgo(want);
+ /* keep the page inside this step, but let it go once the last scene has played */
+ if(!SNAP&&now>=jumpUntil&&(want<N||now<stepAt)){
+  var unit=span/N,y=top+unit*want,half=unit*.46,lo=y-half-6,hi=y+half+6;
+  if(scrollY>hi)scrollTo(0,Math.round(y+half));
+  else if(scrollY<lo)scrollTo(0,Math.round(y-half));
+ }
+}
+function vjump(i){
+ i=Math.max(0,Math.min(SC.length-1,i));
+ jumpUntil=Date.now()+Math.min(2400,500+Math.abs(i-vi)*220);stepAt=0;S.clk();
+ scrollTo({top:Math.round(vTop()+vSpan()*(i/(SC.length-1))),behavior:RM?'auto':'smooth'})}
+$$('#vrail button').forEach(function(b,i){b.onclick=function(){vjump(i)};b.addEventListener('pointerenter',S.hov)});
+var vq=false;
+addEventListener('scroll',function(){if(vq)return;vq=true;
+ requestAnimationFrame(function(){vq=false;vscroll()})},{passive:true});
+addEventListener('resize',vscroll);
+vgo(0,true);
+
+/* ===================== trial: one playable job ===================== */
+var TR=(function(){
+ var ITEMS={
+  6:{n:'빈 캔',k:'',d:'며칠은 된 것 같아요.',act:['look','throw']},
+  7:{n:'쌓인 신문',k:'',d:'묶음째 쌓여 있어요.',act:['look','throw'],clue:{id:'A',t:'배달이 한 날짜에서 멈춰 있어요. 그 뒤로는 아무도 받지 않았어요.'}},
+  8:{n:'쓰레기봉투',k:'',d:'묶어 두기만 하고 내놓지 못한 봉투예요.',act:['look','throw']},
+  9:{n:'식은 컵',k:'',d:'두 개가 나란히 놓여 있어요.',act:['look','tidy','throw']},
+  10:{n:'옷 더미',k:'',d:'옷이 뒤섞여 있어요.',act:['look','tidy','throw']},
+  11:{n:'봉투 하나 더',k:'',d:'구석에 밀려나 있어요.',act:['look','throw']},
+  12:{n:'영수증 뭉치',k:'',d:'고무줄로 묶여 있어요.',act:['look','throw'],clue:{id:'B',t:'매주 금요일, 같은 가게. 늘 2인분이에요.'}},
+  13:{n:'버리지 못한 상자',k:'',d:'테이프가 반쯤 뜯겨 있어요.',act:['look','tidy','throw'],clue:{id:'C',t:'이삿짐 목록이 들어 있어요. 한 사람 이름만 줄로 지워져 있어요.'}},
+  14:{n:'책 더미',k:'',d:'아무렇게나 쌓여 있어요.',act:['look','tidy','throw']},
+  15:{n:'개봉하지 못한 상자',k:'',d:'방 한가운데를 막고 있어요.',act:['look','tidy','throw'],clue:{id:'D',t:'수신인은 의뢰인 본인. 소인은 3년 전이에요.'}},
+  16:{n:'그릇',k:'',d:'책상 끝에 올려져 있어요.',act:['tidy','throw']},
+  W:{n:'창문',k:'특별 주문',d:'먼지가 두껍게 앉아 있어요.',act:['wipe']},
+  R:{n:'러그',k:'들추기',d:'한쪽 모서리가 들떠 있어요.',act:['lift']},
+  H:{n:'접힌 종이',k:'',d:'러그 밑에 깔려 있었어요.',act:['look','tidy'],clue:{id:'E',t:'보내지 못한 편지. 받는 사람 칸이 비어 있어요.'}}
+ };
+ var COST={look:8,tidy:8,throw:6,wipe:15,lift:6,talk:15};
+ var TIRED=30;
+ var TIME={look:30,tidy:30,throw:20,wipe:60,lift:20,talk:30};
+ var DAY=540,LATEDAY=720,LIMIT=180;
+ function clock(m){var t=540+m;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
+ function left(){return (st.late?LATEDAY:DAY)-st.min}
+ var LBL={look:'조사',tidy:'정리',throw:'폐기',wipe:'닦기',lift:'들추기'};
+ var HOW={look:'좌우로 끌어 돌려 보기',throw:'길게 눌러 버리기',wipe:'문질러 닦기',lift:'길게 눌러 들추기'};
+ var CLUTTER=[6,7,8,9,10,11,12,13,14];
+ var st,sel=null;
+ var TALK=[
+  {id:'t1',q:'이 상자, 아직 열어 보지 않으셨네요.',need:'D',lab:'개봉하지 못한 상자',r:'그 상자는… 오늘 밤에 열어 볼게요. 혼자 있을 때.'},
+  {id:'t2',q:'금요일마다, 두 사람 몫을 사셨더라고요.',need:'B',lab:'영수증 뭉치',r:'습관이 무섭죠. 이제 한 사람 몫만 사면 되는데.'},
+  {id:'t3',q:'이삿짐 목록에서 이름 하나가 지워져 있었어요.',need:'C',lab:'버리지 못한 상자',r:'제가 지웠어요. 지우는 데 한 달 걸렸어요.'},
+  {id:'t4',q:'신문이 어느 날부터 그대로 쌓여 있었어요.',need:'A',lab:'쌓인 신문',r:'그날 뒤로 아무것도 못 했어요. 오늘이 처음이에요.'},
+  {id:'t5',q:'받는 사람 칸이 비어 있는 편지를 봤어요.',need:'E',lab:'접힌 종이',r:'…끝까지 못 썼어요. 그래도 봐 주셔서 고마워요.'},
+  {id:'t9',q:'물건이 많으시네요. 좀 버리셔야겠어요.',need:'',lab:'',r:'……그 얘기는 안 하셨으면 좋았을 텐데요.'}
+ ];
+ function TQ(id){for(var i=0;i<TALK.length;i++)if(TALK[i].id===id)return TALK[i];return null}
+ function tally(){
+  var ok=handled()>=8,rate=ok?(st.wiped?5:4):3,lost=st.state[16]==='gone';
+  if(lost)rate=Math.min(rate,4);
+  var perfect=handled()===9&&st.wiped&&!lost;
+  var clean=rate<=3?84:120,tip=st.talk===1?(nclue()>=4?40:25):0;
+  return {ok:ok,rate:rate,lost:lost,perfect:perfect,clean:clean,tip:tip,
+   sum:clean+(st.wiped?30:0)+(perfect?40:0)+tip,tmr:st.late?70:(st.hp>=40?100:85)}
+ }
+
+ var tick=null;
+ function tleft(){return st&&st.t0?Math.max(0,LIMIT-(Date.now()-st.t0)/1000):LIMIT}
+ function tfmt(s){s=Math.ceil(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+ function stopClock(){if(tick)clearInterval(tick);tick=null;var e=$('#trTm');if(e)e.classList.remove('on')}
+ function startClock(){stopClock();st.t0=Date.now();tick=setInterval(tock,200);tock()}
+ function tock(){
+  var e=$('#trTm');if(!e)return;
+  if(st.phase!=='work'){stopClock();return}
+  var s=tleft();
+  e.classList.add('on');e.classList.toggle('warn',s<=30);
+  e.innerHTML='<span>남은 시간</span><b>'+tfmt(s)+'</b><i><em style="width:'+(s/LIMIT*100).toFixed(1)+'%"></em></i>';
+  if(s<=0){stopClock();st.over=true;st.log='제한 시간이 끝났어요. 더 치울 시간이 없어요.';
+   note('x','제한 시간이 끝나 하루를 마쳤어요.');S.stamp();
+   st.phase='talk';sel=null;st.mini=null;paint();panel()}
+ }
+ function reset(){st={hp:100,late:false,t0:0,over:false,state:{},clues:{},wiped:false,phase:'intro',talk:0,q:'',log:'',hist:[],showLog:false,rug:false,mini:null,seen:{},min:0};sel=null}
+ function note(kind,t){st.hist.unshift({k:kind,t:t})}
+ function handled(){var c=0;CLUTTER.forEach(function(i){if(st.state[i]==='gone'||st.state[i]==='moved')c++});return c}
+ function prog(){return Math.min(1,handled()/CLUTTER.length*.88+(st.wiped?.12:0))}
+ function tint(){return st.talk===1?1:st.talk===2?-1:0}
+ function hideMap(){var h={};for(var k in st.state)h[k]=st.state[k]==='moved'?'moved':(st.state[k]==='gone'?'gone':'');return h}
+ function nclue(){return Object.keys(st.clues).length}
+ function paint(){
+  draw($('#svTR'),prog(),tint(),st.state[16]==='gone',TOUCH,hideMap());
+  var h='';
+  Object.keys(ITEMS).forEach(function(k){
+   var c,o=ITEMS[k];
+   if(k==='W'){c=[690,232]}
+   else if(k==='R'){if(st.rug)return;c=iso(3.7,3.8,.3)}
+   else if(k==='H'){if(!st.rug||st.state.H==='gone')return;c=iso(3.7,3.8,.3)}
+   else{
+    var f=F[+k];if(!f)return;
+    if(st.state[k]==='gone')return;
+    var mv=st.state[k]==='moved'&&f.to,x=mv?f.to[0]:f.x,y=mv?f.to[1]:f.y;
+    c=iso(x+f.sx/2,y+f.sy/2,(f.z||0)+f.sz+.15)}
+   var done=(k==='W'&&st.wiped)||st.state[k]==='moved'||st.state[k]==='kept';
+   h+='<g data-k="'+k+'" class="'+(sel===k?'sel ':'')+(done?'done':'')+'">'
+    +'<circle class="ht" cx="'+c[0].toFixed(0)+'" cy="'+c[1].toFixed(0)+'" r="20"/>'
+    +'<circle class="hr" cx="'+c[0].toFixed(0)+'" cy="'+c[1].toFixed(0)+'" r="15"/>'
+    +'<circle class="hc" cx="'+c[0].toFixed(0)+'" cy="'+c[1].toFixed(0)+'" r="10.5"/>'
+    +'<circle class="hd" cx="'+c[0].toFixed(0)+'" cy="'+c[1].toFixed(0)+'" r="3"/>'
+    +'<text x="'+(c[0]+17).toFixed(0)+'" y="'+(c[1]+4).toFixed(0)+'">'+o.n+'</text></g>'});
+  var H=$('#svTH');H.innerHTML=st.phase==='work'?h:'';
+  $$('#svTH g').forEach(function(g){g.addEventListener('click',function(){pick(g.getAttribute('data-k'))})});
+ }
+ function stats(){
+  var lim=st.late?LATEDAY:DAY;
+  return '<div class="trst"><div><span>체력</span><b class="'+(st.hp<TIRED?'low':'')+'">'+st.hp+'</b><i><em style="width:'+Math.min(100,st.hp)+'%"></em></i></div>'
+   +'<div><span>시각</span><b class="'+(left()<=60?'low':'')+'">'+clock(st.min)+'</b><i><em style="width:'+(st.min/lim*100)+'%"></em></i></div>'
+   +'<div><span>동선</span><b>'+handled()+' / 9</b><i><em style="width:'+(handled()/9*100)+'%"></em></i></div>'
+   +'<div><span>단서</span><b>'+nclue()+'</b><i><em style="width:'+Math.min(100,nclue()*20)+'%"></em></i></div></div>'}
+ function estimate(){
+  return '<div class="paper"><h5>견적서<span>EST-001</span></h5>'
+   +'<div class="row"><span>의뢰 조건</span><span>바닥 동선 확보 (9개 중 8개 이상)</span></div>'
+   +'<div class="row"><span>특별 청소 주문</span><span>창문 닦기</span></div>'
+   +'<div class="row"><span>보호 물건</span><span>돌려보낼 그릇</span></div>'
+   +'<div class="row"><span>보수</span><span>$120 · 하루</span></div></div>'}
+ var CLUES=[['A','쌓인 신문'],['B','영수증 뭉치'],['C','버리지 못한 상자'],['D','개봉하지 못한 상자'],['E','접힌 종이']];
+ function clueBlock(){
+  var h='<div class="paper trcl"><h5>찾은 단서<span>'+nclue()+'</span></h5><ul>';
+  if(!nclue())h+='<li><span>아직 아무것도 없어요.</span></li>';
+  CLUES.forEach(function(c){var k=Object.keys(ITEMS).filter(function(x){return ITEMS[x].clue&&ITEMS[x].clue.id===c[0]})[0],o=ITEMS[k];
+   if(st.clues[c[0]])h+='<li class="got"><b>'+c[1]+'</b><span>'+o.clue.t+'</span></li>'});
+  return h+'</ul></div>'}
+ function logBlock(){
+  var n=st.hist.length,h='<button class="trlogbtn" data-a="log"><span>작업 기록 '+(st.showLog?'닫기':'보기')+'</span><b>'+n+'</b></button>';
+  if(st.showLog){
+   h+='<div class="paper"><h5>작업 기록<span>LOG</span></h5><ul class="trhist">';
+   if(!n)h+='<li class="none">아직 한 일이 없어요.</li>';
+   st.hist.forEach(function(e){var L={c:'단서',g:'정리',k:'폐기',x:'주의',w:'특별'}[e.k];h+='<li class="'+e.k+'"><em>'+L+'</em><span>'+e.t+'</span></li>'});
+   h+='</ul></div>'}
+  return h}
+ function say(t,mood){var e=$('#trSay');e.className='say trsay '+(mood||'');e.innerHTML=t?'<b>의뢰인</b>“'+t+'”':'';
+  if(t){e.style.animation='none';void e.offsetWidth;e.style.animation=''}}
+ /* ---- ending screen ---- */
+ var FACE_B='<path fill="#5E6B72" d="M26 340 C30 286 68 258 110 246 L150 292 L190 246 C232 258 270 286 274 340Z"/> <path fill="#7E8A90" d="M110 246 L150 292 L190 246 L174 240 L150 268 L126 240Z"/> <path fill="#D4BF9A" d="M130 196h40v54h-40z"/> <path fill="#E7D9BE" d="M82 116 C82 64 112 36 150 36 C188 36 218 64 218 116 C218 166 188 210 150 210 C112 210 82 166 82 116Z"/> <path fill="#D4BF9A" d="M186 52 C206 68 218 88 218 116 C218 166 188 210 150 210 C166 206 182 188 192 162 C200 140 200 92 186 52Z" opacity=".5"/> <path fill="#4A3826" d="M150 20 C100 20 74 54 72 108 C70 146 66 196 58 242 L94 232 C88 192 88 146 92 104 C112 118 162 122 196 106 C212 98 222 88 228 80 C234 120 236 186 232 232 L268 242 C262 198 258 148 256 110 C252 52 206 20 150 20Z"/> <path fill="#5E4830" d="M92 104 C94 58 114 38 150 36 C186 38 220 58 230 80 C216 62 200 58 188 66 C178 72 168 76 160 70 C154 64 151 56 149 48 C141 62 127 72 113 68 C105 66 98 90 92 104Z"/>';
+ var MOOD={flat:{e:'<ellipse cx="124" cy="140" rx="7" ry="9" fill="#36291D"/><ellipse cx="176" cy="140" rx="7" ry="9" fill="#36291D"/>', b:'<rect x="113" y="120" width="22" height="5" rx="2.5" fill="#36291D" opacity=".7"/><rect x="165" y="120" width="22" height="5" rx="2.5" fill="#36291D" opacity=".7"/>', m:'<rect x="141" y="168" width="18" height="5" rx="2.5" fill="#36291D" opacity=".85"/>'}, warm:{e:'<path d="M114 144 C120 134 134 134 140 144" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/> <path d="M160 144 C166 134 180 134 186 144" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/>', b:'<rect x="113" y="118" width="22" height="5" rx="2.5" fill="#36291D" opacity=".6"/><rect x="165" y="118" width="22" height="5" rx="2.5" fill="#36291D" opacity=".6"/>', m:'<path d="M138 166 C144 176 156 176 162 166" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/>'}, cold:{e:'<path d="M114 142 C120 150 134 150 140 142" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/> <path d="M160 142 C166 150 180 150 186 142" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/>', b:'<rect x="112" y="124" width="22" height="5" rx="2.5" fill="#36291D" opacity=".7" transform="rotate(-7 123 126)"/><rect x="166" y="124" width="22" height="5" rx="2.5" fill="#36291D" opacity=".7" transform="rotate(7 177 126)"/>', m:'<path d="M140 174 C145 168 155 168 160 174" fill="none" stroke="#36291D" stroke-width="5" stroke-linecap="round"/>'}};
+ function face(mood){var o=MOOD[mood]||MOOD.flat;
+  return '<svg class="tefc" viewBox="0 0 300 348" aria-label="의뢰인">'+FACE_B+o.b+o.e+o.m+'</svg>'}
+ function pol(r,a){var t=(a-90)*Math.PI/180;return [(50+r*Math.cos(t)).toFixed(1),(50+r*Math.sin(t)).toFixed(1)]}
+ function dial(m){
+  var t=540+m,ha=(t/60%12)*30,ma=(t%60)*6,a0=270,a1=ha+(t%60)*.5+(t>=720?360:0);
+  if(a1<=a0)a1=a0+1;
+  var p0=pol(30,a0),p1=pol(30,a1),hp=pol(17,ha+(t%60)*.5),mp=pol(25,ma);
+  return '<svg class="tedl" viewBox="0 0 100 100" aria-hidden="true">'
+   +'<g fill="none" stroke="#3A2E22" stroke-width="3" stroke-linecap="round">'
+   +'<circle cx="50" cy="50" r="40"/>'
+   +'<path class="arc" d="M'+p0[0]+' '+p0[1]+' A30 30 0 '+((a1-a0)>180?1:0)+' 1 '+p1[0]+' '+p1[1]+'"/>'
+   +'<path d="M50 50 L'+hp[0]+' '+hp[1]+'"/><path d="M50 50 L'+mp[0]+' '+mp[1]+'" stroke-width="2"/>'
+   +'</g></svg>'}
+ function bar(v,max,warn){return '<i class="teg'+(warn?' warn':'')+'"><em style="--w:'+Math.max(0,Math.min(100,v/max*100)).toFixed(1)+'%"></em></i>'}
+ function marks(n){var h='';for(var i=0;i<n;i++)h+='<s class="on" style="--i:'+i+'"></s>';
+  return '<div class="tetk'+(n?'':' em')+'">'+(h||'<s class="z" style="--i:0"></s>')+'</div>'}
+ function ticks(n,tot){var h='';for(var i=0;i<tot;i++)h+='<s class="'+(i<n?'on':'')+'" style="--i:'+i+'"></s>';return '<div class="tetk">'+h+'</div>'}
+ function coins(sum){var n=Math.max(1,Math.round(sum/10)),h='';for(var i=0;i<n;i++)h+='<i class="f" style="--i:'+i+'"></i>';
+  return '<div class="tecn">'+h+'</div>'}
+ var VERD={3:'지나다닐 길이 다 열리지 않았어요. 청소비가 깎였어요.',4:'의뢰 조건은 지켰어요. 한 가지가 아쉬웠어요.',5:'조건과 특별 주문까지 다 지켰어요.'};
+ function endLine(T){
+  var l=T.lost?'그릇은… 돌려보내야 하는 거였는데요.':!T.ok?'아직 지나다니기가 좀 어렵네요.'
+   :T.perfect?'창문까지… 몇 년 만에 햇빛이 들어와요.':'이제 내일 짐을 뺄 수 있겠어요. 고맙습니다.';
+  var Q=TQ(st.q);if(st.talk&&Q)l+=' '+Q.r;
+  return l}
+ var endT=[];
+ function endHide(){endT.forEach(clearTimeout);endT=[];var e=$('#trEnd');if(!e)return;e.classList.remove('on');e.innerHTML='';document.body.classList.remove('teon')}
+ function endShow(){
+  var E=$('#trEnd');if(E.classList.contains('on'))return;
+  var T=tally(),mood=(st.talk===2||T.lost)?'cold':(st.talk===1||T.perfect)?'warm':T.ok?'flat':'cold';
+  var stars='';for(var i=0;i<5;i++)stars+='<i class="'+(i<T.rate?'on':'')+'" style="--i:'+i+'">'+(i<T.rate?'★':'☆')+'</i>';
+  var cl='';CLUES.forEach(function(c){var k=Object.keys(ITEMS).filter(function(x){return ITEMS[x].clue&&ITEMS[x].clue.id===c[0]})[0];
+   if(st.clues[c[0]])cl+='<li><b>'+c[1]+'</b><span>'+ITEMS[k].clue.t+'</span></li>'});
+  if(!cl)cl='<li class="none">아무것도 찾지 못했어요.</li>';
+  E.innerHTML='<div class="tew">'
+   +'<div class="teh"><span class="lab">DAY 001 · 의뢰 #001 · 이사 전날의 방</span><h3>하루가 끝났어요</h3></div>'
+   +'<div class="tegrid">'
+    +'<div class="tefig">'+face(mood)+'<span class="nm">의뢰인</span></div>'
+    +'<div class="tebub '+mood+'"><b>의뢰인</b><p>“'+endLine(T)+'”</p></div>'
+   +'</div>'
+   +'<div class="tesec tert"><span class="lab">의뢰인 평점</span><div class="test">'+stars+'</div><p>'+VERD[T.rate]+'</p></div>'
+   +'<div class="teres">'
+    +'<div class="tec"><span>받은 보수</span><b>$'+T.sum+'</b><div class="vis">'+coins(T.sum)+'</div></div>'
+    +'<div class="tec'+(st.hp<TIRED?' low':'')+'"><span>남은 체력</span><b>'+st.hp+'<em>/100</em></b><div class="vis" style="align-items:center">'+bar(st.hp,120,st.hp<TIRED)+'</div></div>'
+    +'<div class="tec"><span>마친 시각</span><b>'+clock(st.min)+'</b><div class="vis">'+dial(st.min)+'</div></div>'
+    +'<div class="tec'+(T.ok?'':' low')+'"><span>확보한 동선</span><b>'+handled()+'<em>/9</em></b><div class="vis" style="align-items:center">'+ticks(handled(),9)+'</div></div>'
+    +'<div class="tec"><span>모은 단서</span><b>'+nclue()+'</b><div class="vis" style="align-items:center">'+marks(nclue())+'</div></div>'
+    +'<div class="tec"><span>내일 시작 체력</span><b>'+T.tmr+'</b><div class="vis" style="align-items:center">'+bar(T.tmr,100,T.tmr<80)+'</div></div>'
+   +'</div>'
+   +'<div class="terc">'
+    +'<div class="tep r1 tepr"><h5>영수증<span>RECEIPT · 001</span></h5>'
+     +'<div class="row"><span>기본 청소비</span><span>$'+T.clean+'</span></div>'
+     +'<div class="row"><span>평판 보정</span><span>'+(T.rate<=3?'−30%':'없음')+'</span></div>'
+     +'<div class="row"><span>특별 청소 주문</span><span>'+(st.wiped?'+$30':'—')+'</span></div>'
+     +'<div class="row"><span>완벽한 청소</span><span>'+(T.perfect?'+$40':'—')+'</span></div>'
+     +'<div class="row"><span>팁</span><span>'+(T.tip?'+$'+T.tip:'$0')+'</span></div>'
+     +'<div class="row"><span>보호 물건</span><span>'+(T.lost?'폐기 · 평점 상한 4':'지킴')+'</span></div>'
+     +(st.over?'<div class="row"><span>마감</span><span>제한 시간 종료</span></div>':'')
+     +'<div class="row tot"><b>실제 보수</b><b>$'+T.sum+'</b></div></div>'
+    +'<div class="tep r2"><h5>오늘 들은 이야기<span>CLUES '+nclue()+'</span></h5><ul>'+cl+'</ul></div>'
+   +'</div>'
+   +'<div class="tebtn">'
+    +'<button class="trb pri" data-a="again">다시 해보기<small>다른 선택으로</small></button>'
+    +'<button class="trb" data-a="story">스토리 보기<small>1년의 흐름</small></button>'
+   +'</div></div>';
+  E.classList.add('on');E.scrollTop=0;document.body.classList.add('teon');
+  $$('#trEnd [data-a]').forEach(function(b){b.addEventListener('click',function(){act(b.getAttribute('data-a'))})});
+  endT=[];
+  for(var k=0;k<T.rate;k++)(function(j){endT.push(setTimeout(function(){S.stamp()},2200+j*160))})(k);
+  endT.push(setTimeout(function(){S.print()},3900));
+  if(T.rate===5)endT.push(setTimeout(function(){S.chime()},3100));
+ }
+ function panel(){
+  var P=$('#trPan'),h='';
+  if(st.phase==='intro'){
+   h+=estimate()+'<div class="paper"><h5>오늘의 의뢰<span>DM</span></h5>'
+    +'<p>내일 이사를 가요. 견적서에 적은 대로만 부탁드려요.</p>'
+    +'<p style="color:#8A7355;font-size:11.5px">점을 눌러 물건을 고르고, 조사·정리·폐기 중 하나를 하세요. 행동마다 체력이 들어요.</p>'
+    +'<div class="trbtns"><button class="trb pri" data-a="start">의뢰 시작하기</button></div></div>';
+   say('');
+  }else if(st.phase==='work'){
+   h+=stats();
+   if(sel){var o=ITEMS[sel];
+    h+='<div class="paper"><h5>'+o.n+'<span>'+(o.k||'')+'</span></h5><p>'+o.d+'</p>';
+    var looked=(o.clue&&st.clues[o.clue.id])||st.seen[sel],fin=st.state[sel]==='moved'||st.state[sel]==='kept'||(sel==='W'&&st.wiped);
+    if(o.clue&&st.clues[o.clue.id])h+='<p class="trclue">'+o.clue.t+'</p>';
+    if(st.mini){h+=miniHTML(st.mini,o)+'</div>'}
+    else if(fin){h+='<p class="trdone">✓ '+(sel==='W'?'다 닦았어요.':'제자리에 정리했어요.')+' 이 물건은 끝났어요.</p></div>'}
+    else{
+    if(looked)h+='<p class="trnote">조사함</p>';
+    h+='<div class="trbtns">';
+    o.act.forEach(function(a){
+     if(a==='look'&&looked)return;
+     var dis=st.hp<COST[a]||left()<TIME[a],mt=mtype(sel,a);
+     h+='<button class="trb" data-a="'+a+'"'+(dis?' disabled':'')+'>'+LBL[a]+'<small>체력 −'+COST[a]+' · '+TIME[a]+'분</small></button>'});
+    h+='</div></div>';}
+   }else{
+    h+='<div class="paper"><h5>방<span></span></h5><p>물건을 고르세요.</p></div>';
+   }
+   h+=estimate();
+   h+='<p class="trlog">'+st.log+'</p>'+clueBlock()+logBlock();
+   h+='<div class="trend">'
+    +(st.late?'':'<button class="trb" data-a="late">늦게까지 남기<small>21시까지 · 체력 +20 · 내일 70</small></button>')
+    +'<button class="trb pri" data-a="end">하루 마무리<small>'+(st.late?'늦게':'보통')+'</small></button></div>';
+  }else if(st.phase==='talk'){
+   var noHp=st.hp<COST.talk,noT=left()<TIME.talk;
+   if(noHp||noT){
+    h+='<div class="paper"><h5>의뢰인과 한마디<span>상담 불가</span></h5>'
+     +'<p class="trnote warn">'+(noHp
+       ?'체력이 부족해 상담을 진행할 수 없어요. 상담에는 체력 '+COST.talk+'이 필요한데 '+st.hp+'만 남았어요.'
+       :'남은 시간이 부족해 상담을 진행할 수 없어요. 상담에는 '+TIME.talk+'분이 필요한데 '+left()+'분만 남았어요.')+'</p>'
+     +'<p>'+(st.over?'제한 시간이 끝났어요. 인사만 하고 문을 닫았어요.':'인사만 하고 문을 닫았어요.')+'</p>'
+     +'<div class="trbtns"><button class="trb pri" data-a="t0">하루를 마무리하기</button></div></div>';
+   }else{
+    h+='<div class="paper"><h5>의뢰인과 한마디<span>상담 · 체력 −'+COST.talk+' · '+TIME.talk+'분</span></h5>'
+     +(st.over?'<p class="trnote warn">제한 시간이 끝났어요. 오늘은 여기까지예요.</p>':'')
+     +'<p>짐을 확인하던 의뢰인이 잠깐 손을 멈췄어요. 찾은 단서로 뒷받침되는 말만 건넬 수 있어요.</p>'
+     +'<div class="trbtns" style="flex-direction:column">';
+    TALK.forEach(function(o){var open=!o.need||st.clues[o.need];
+     h+='<button class="trb" data-a="'+o.id+'"'+(open?'':' disabled')+'>“'+o.q+'”'
+      +'<small>'+(open?(o.need?'근거 · '+o.lab:'근거 없이 하는 말'):'뒷받침할 단서가 없어요')+'</small></button>'});
+    h+='<button class="trb" data-a="t0">말을 걸지 않고 청소만 끝내기</button></div></div>';
+   }
+   say('……');
+  }
+  if(st.phase==='done'){stopClock();endShow();say('')}else{if(st.phase!=='work')stopClock();endHide()}
+  P.innerHTML=h;if(st.phase==='work'&&sel)bindMini();else st.mini=null;
+  $$('#trPan [data-a]').forEach(function(b){b.addEventListener('click',function(){act(b.getAttribute('data-a'))})});
+ }
+ /* which hands-on action each object uses */
+ var MINI={
+  6:{throw:'drop'}, 7:{look:'unfold',throw:'tie'}, 8:{throw:'tie'},
+  9:{tidy:'drop',throw:'drop'}, 10:{tidy:'fold',throw:'hold'}, 11:{throw:'drop'},
+  12:{look:'peel',throw:'hold'}, 13:{look:'loupe',tidy:'drop',throw:'hold'},
+  14:{tidy:'stack',throw:'drop'}, 15:{look:'flip',tidy:'drop',throw:'hold'},
+  16:{tidy:'drop',throw:'hold'}, H:{look:'unfold'}, W:{wipe:'wipe'}, R:{lift:'hold'}};
+ var HOWT={flip:'끌어서 뒤집기',unfold:'끌어 올려 펼치기',peel:'한 장씩 넘기기',loupe:'돋보기로 살피기',
+  hold:'길게 눌러',drop:'끌어다 놓기',tie:'여러 번 눌러 묶기',fold:'좌우로 쓸어 개기',stack:'눌러서 쌓기',wipe:'문질러 닦기'};
+ var DROP={throw:['쓰레기통','폐기'],tidy:{9:['싱크대','정리'],13:['선반','정리'],15:['벽 쪽','정리'],16:['챙길 짐','정리']}};
+ function mtype(k,a){return (MINI[k]&&MINI[k][a])||(a==='look'?'flip':a==='throw'?'hold':null)}
+ function miniHTML(m,o){
+  var t=m.t,a=m.a,cancel='<button class="trb mgx" data-a="cancel">그만두기</button>';
+  var clue=st.hp<TIRED?'눈이 침침해서 잘 보이지 않아요.':(o.clue?o.clue.t:'특별한 건 없어요.');
+  if(t==='flip')return '<div class="mg"><div class="rc3w"><div class="rc3" id="rc3">'
+   +'<div class="fc fr"><b>'+o.n+'</b></div>'
+   +'<div class="fc bk"><span>'+clue+'</span></div></div></div>'
+   +'<p class="mgh" id="mgh">돌려 보기</p><div id="mgok"></div>'+cancel+'</div>';
+  if(t==='unfold')return '<div class="mg"><div class="ufw" id="ufw"><div class="ufp" id="ufp"><span>'+clue+'</span></div>'
+   +'<div class="ufh" id="ufh">▲</div></div><p class="mgh" id="mgh">펼쳐 보기</p><div id="mgok"></div>'+cancel+'</div>';
+  if(t==='peel'){var c='<div class="mg"><div class="pls" id="pls">';
+   for(var i=3;i>=0;i--)c+='<div class="pl" style="--i:'+i+'">'+(i===0?'<span>'+clue+'</span>':'<em>영수증 · '+['3.02','3.09','3.16'][i-1]+'</em>')+'</div>';
+   return c+'</div><p class="mgh" id="mgh">넘겨 보기</p><div id="mgok"></div>'+cancel+'</div>'}
+  if(t==='loupe'){var LIST='<b>이삿짐 목록</b><br>냄비 2 · 이불 2 · 책상 1<br>짐 주인: 나 · <i class="lpt">한 ○ ○</i><br>화분 3 · 의자 2';
+   return '<div class="mg"><div class="lpw" id="lpw"><div class="lpb"><span>'+LIST.replace(' class="lpt"',' id="lpt" class="lpt"')+'</span></div>'
+   +'<div class="lpc" id="lpc"><span>'+LIST+'</span></div><div class="lpr" id="lpr"></div></div>'
+   +'<p class="mgh" id="mgh">살펴보기</p><div id="mgok"></div>'+cancel+'</div>'}
+  if(t==='wipe')return '<div class="mg"><div class="wpw"><canvas id="wpc"></canvas><span class="wpl">밖이 보여요</span></div>'
+   +'<p class="mgh">문질러서 먼지를 닦으세요 <b id="wpp">0%</b></p>'+cancel+'</div>';
+  if(t==='drop'){var tg=a==='throw'?DROP.throw:(DROP.tidy[sel]||['제자리','정리']);
+   return '<div class="mg"><div class="dpw" id="dpw"><div class="dpi" id="dpi">'+o.n+'</div><div class="dpt'+(a==='throw'?' bin':'')+'" id="dpt"><b>'+tg[0]+'</b><i>'+tg[1]+'</i></div></div>'
+    +'<p class="mgh">물건을 '+tg[0]+'(으)로 끌어다 놓으세요</p>'+cancel+'</div>'}
+  if(t==='tie'||t==='stack'){var n=t==='tie'?4:4,lab=t==='tie'?'묶기':'쌓기',dots='';for(var j=0;j<n;j++)dots+='<i></i>';
+   return '<div class="mg"><div class="tpw"><button class="tpb" id="tpb"><span id="tpl">'+lab+'</span></button><div class="tpd" id="tpd">'+dots+'</div>'
+    +(t==='stack'?'<div class="stk" id="stk"></div>':'')+'</div><p class="mgh">'+(t==='tie'?'여러 번 눌러 단단히 묶으세요':'한 권씩 눌러 반듯하게 쌓으세요')+'</p>'+cancel+'</div>'}
+  if(t==='fold')return '<div class="mg"><div class="fdw" id="fdw"><div class="fdc" id="fdc"></div></div>'
+   +'<p class="mgh" id="mgh">좌우로 번갈아 쓸어서 개어 보세요 <b id="fdn">0 / 3</b></p>'+cancel+'</div>';
+  var warn=false;
+  return '<div class="mg"><button class="hold'+(warn?' warn':'')+'" id="hold"><i id="holdf"></i><span>'+LBL[a]+'</span></button>'
+   +'<p class="mgh">'+(a==='lift'?'길게 눌러 러그를 들춰요':warn?'보호 물건이에요. 정말 버릴까요? 길게 눌러요':'길게 눌러 버려요')+'</p>'+cancel+'</div>'}
+ function okBtn(txt){var b=$('#mgok');if(!b)return;b.innerHTML='<button class="trb pri mgdone" id="mgdone">'+(txt||'확인했어요')+'</button>';
+  $('#mgdone').addEventListener('click',function(){finish(st.mini.a)})}
+ function bindMini(){
+  if(!st.mini)return;var m=st.mini,t=m.t,a=m.a,o=ITEMS[sel]||{},clue=st.hp<TIRED?'눈이 침침해서 잘 보이지 않아요.':(o.clue?o.clue.t:'특별한 건 없어요.');
+  if(t==='flip'){var c=$('#rc3'),w=c.parentNode,ang=0,d=null,ok=false;
+   var set=function(){c.style.transform='rotateY('+ang+'deg)'};
+   w.addEventListener('pointerdown',function(e){if(ok)return;d={x:e.clientX,a:ang};w.setPointerCapture(e.pointerId);c.style.transition='none'});
+   w.addEventListener('pointermove',function(e){if(!d||ok)return;ang=d.a+(e.clientX-d.x)*.9;set();
+    var n=((ang%360)+360)%360;if(n>150&&n<210){ok=true;ang=Math.round(ang/180)*180;c.style.transition='transform .35s';set();S.chime();
+     $('#mgh').textContent='';okBtn()}});
+   w.addEventListener('pointerup',function(){d=null});}
+  if(t==='unfold'){var hd=$('#ufh'),pp=$('#ufp'),wr=$('#ufw'),d2=null,k=0,ok2=false;
+   var setk=function(){pp.style.transform='scaleY('+(.12+.88*k).toFixed(3)+')';pp.style.opacity=(.4+.6*k).toFixed(2);hd.style.bottom=(k*72).toFixed(0)+'%'};setk();
+   hd.addEventListener('pointerdown',function(e){if(ok2)return;d2={y:e.clientY,k:k};hd.setPointerCapture(e.pointerId)});
+   hd.addEventListener('pointermove',function(e){if(!d2||ok2)return;k=Math.max(0,Math.min(1,d2.k+(d2.y-e.clientY)/(wr.offsetHeight*.75)));setk();
+    if(k>.95){ok2=true;k=1;setk();S.chime();$('#mgh').textContent='';okBtn()}});
+   hd.addEventListener('pointerup',function(){d2=null});}
+  if(t==='peel'){var pls=$$('#pls .pl'),idx=0;
+   $('#pls').addEventListener('click',function(){if(idx>=pls.length-1)return;var top=pls[idx];top.classList.add('gone');S.pop();idx++;
+    if(idx===pls.length-1){S.chime();$('#mgh').textContent='';okBtn()}});}
+  if(t==='loupe'){var lw=$('#lpw'),lc=$('#lpc'),lr=$('#lpr'),tg=$('#lpt'),hit=0,ok3=false;
+   var mv=function(e){var r=lw.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+    lc.style.clipPath='circle(34px at '+x+'px '+y+'px)';lr.style.left=x+'px';lr.style.top=y+'px';lr.style.opacity=1;
+    if(ok3)return;var tr=tg.getBoundingClientRect(),cx=e.clientX,cy=e.clientY;
+    var on=cx>tr.left-10&&cx<tr.right+10&&cy>tr.top-14&&cy<tr.bottom+14;
+    if(on&&!hit){hit=setTimeout(function(){ok3=true;lw.classList.add('found');S.chime();
+     $('#mgh').innerHTML='<b>'+clue+'</b>';okBtn()},420)}
+    else if(!on&&hit){clearTimeout(hit);hit=0}};
+   lw.addEventListener('pointermove',mv);lw.addEventListener('pointerdown',mv);}
+  if(t==='drop'){var it=$('#dpi'),tz=$('#dpt'),d3=null;
+   it.addEventListener('pointerdown',function(e){d3={x:e.clientX,y:e.clientY};it.setPointerCapture(e.pointerId);it.style.transition='none';it.classList.add('on')});
+   it.addEventListener('pointermove',function(e){if(!d3)return;it.style.transform='translate('+(e.clientX-d3.x)+'px,'+(e.clientY-d3.y)+'px)';
+    var a1=it.getBoundingClientRect(),b1=tz.getBoundingClientRect();tz.classList.toggle('over',a1.right>b1.left&&a1.left<b1.right&&a1.bottom>b1.top&&a1.top<b1.bottom)});
+   it.addEventListener('pointerup',function(){if(!d3)return;d3=null;it.classList.remove('on');
+    if(tz.classList.contains('over')){it.style.transition='transform .25s,opacity .25s';it.style.opacity=0;S.pop();setTimeout(function(){finish(a)},280)}
+    else{it.style.transition='transform .3s';it.style.transform=''}});}
+  if(t==='tie'||t==='stack'){var b=$('#tpb'),dd=$$('#tpd i'),n=0,stk=$('#stk');
+   b.addEventListener('click',function(){if(n>=dd.length)return;dd[n].classList.add('on');n++;S.pop();
+    b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');
+    if(stk){var e=document.createElement('span');e.style.setProperty('--r',((Math.random()*6-3)).toFixed(1)+'deg');stk.appendChild(e)}
+    if(n>=dd.length){$('#tpl').textContent=t==='tie'?'다 묶었어요':'다 쌓았어요';setTimeout(function(){finish(a)},450)}});}
+  if(t==='fold'){var fw=$('#fdw'),fc=$('#fdc'),sx=null,last=0,cnt=0;
+   fw.addEventListener('pointerdown',function(e){sx=e.clientX;fw.setPointerCapture(e.pointerId)});
+   fw.addEventListener('pointermove',function(e){if(sx===null||cnt>=3)return;var dx=e.clientX-sx;
+    if(Math.abs(dx)>60){var dir=dx>0?1:-1;if(dir!==last){last=dir;cnt++;sx=e.clientX;S.brush();
+     fc.style.width=(100/(cnt+1)+10).toFixed(0)+'%';fc.style.height=(100-cnt*14)+'%';$('#fdn').textContent=cnt+' / 3';
+     if(cnt>=3){S.chime();setTimeout(function(){finish(a)},500)}}}});
+   fw.addEventListener('pointerup',function(){sx=null});}
+  if(t==='hold'){var hb=$('#hold'),f=$('#holdf'),t0=0,raf=0,need=(a==='lift'?900:650);
+   var stop=function(){cancelAnimationFrame(raf);t0=0;f.style.transform='scaleX(0)'};
+   var tick=function(ts){if(!t0)t0=ts;var k=Math.min(1,(ts-t0)/need);f.style.transform='scaleX('+k+')';
+    if(k<1)raf=requestAnimationFrame(tick);else{S.pop();finish(a)}};
+   hb.addEventListener('pointerdown',function(e){e.preventDefault();hb.setPointerCapture(e.pointerId);raf=requestAnimationFrame(tick)});
+   hb.addEventListener('pointerup',stop);hb.addEventListener('pointercancel',stop);hb.addEventListener('pointerleave',stop);}
+  if(t==='wipe'){var cv=$('#wpc'),x=cv.getContext('2d'),W=cv.width=cv.offsetWidth*2,H=cv.height=cv.offsetHeight*2,dn=false,lx,ly,cn=0,fin=false;
+   x.fillStyle='#8a7a62';x.fillRect(0,0,W,H);
+   for(var i=0;i<1400;i++){x.fillStyle='rgba('+(110+Math.random()*70|0)+','+(95+Math.random()*60|0)+',70,'+(Math.random()*.6).toFixed(2)+')';x.fillRect(Math.random()*W,Math.random()*H,Math.random()*9,Math.random()*5)}
+   var wp=function(e){var r=cv.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W,py=(e.clientY-r.top)/r.height*H;
+    x.globalCompositeOperation='destination-out';x.lineWidth=46;x.lineCap='round';x.beginPath();x.moveTo(lx==null?px:lx,ly==null?py:ly);x.lineTo(px,py);x.stroke();lx=px;ly=py;
+    if(++cn%5===0)S.brush();
+    if(cn%8===0&&!fin){var dt=x.getImageData(0,0,W,H).data,c=0,tot=0;for(var j=3;j<dt.length;j+=160){tot++;if(dt[j]<40)c++}
+     var pc=Math.round(c/tot*100);$('#wpp').textContent=pc+'%';if(pc>=62){fin=true;cv.style.transition='opacity .6s';cv.style.opacity=0;S.chime();setTimeout(function(){finish('wipe')},700)}}};
+   cv.addEventListener('pointerdown',function(e){dn=true;lx=ly=null;cv.setPointerCapture(e.pointerId);wp(e)});
+   cv.addEventListener('pointermove',function(e){if(dn)wp(e)});
+   cv.addEventListener('pointerup',function(){dn=false});}
+ }
+ function finish(a){st.mini=null;act(a,true)}
+ function pick(k){sel=k;st.mini=null;S.pop();paint();panel();
+  if(TOUCH){var c=$('#trPan .paper');if(c)setTimeout(function(){c.scrollIntoView({behavior:'smooth',block:'center'})},60)}}
+ function backToRoom(){if(!TOUCH)return;var r=$('.trs').getBoundingClientRect();
+  setTimeout(function(){scrollTo({top:scrollY+r.top,behavior:'smooth'})},380)}
+ function act(a,real){
+  if(!real)S.clk();
+  if(a==='cancel'){st.mini=null;paint();panel();return}
+  if(!real&&sel&&st.phase==='work'&&(a==='look'||a==='throw'||a==='wipe'||a==='lift'||a==='tidy')){var mt=mtype(sel,a);if(mt){st.mini={a:a,t:mt};panel();return}}
+  if(a==='start'){st.phase='work';startClock();say('바닥만 지나다닐 수 있으면 돼요.');}
+  else if(a==='again'){endHide();reset();st.phase='work';startClock();say('바닥만 지나다닐 수 있으면 돼요.');panX=homeX();panY=0;applyPan()}
+  else if(a==='story'){endHide();go('story');return}
+  else if(a==='late'){st.late=true;st.hp=Math.min(120,st.hp+20);st.log='늦게까지 남기로 했어요. 오늘 체력이 늘었지만 내일이 무거워져요.';note('x','늦게까지 남았어요. 내일 시작 체력 70.');}
+  else if(a==='log'){st.showLog=!st.showLog}
+  else if(a==='play'){$('#trOb').classList.add('out');$('#trEst').classList.remove('out');say('')}
+  else if(a==='go'){$('#trEst').classList.add('out');st.phase='work';startClock();say('내일 이사를 가요. 견적서에 적은 대로만 부탁드려요.');}
+  else if(a==='end'){
+   st.phase='talk';
+   sel=null;
+  }
+  else if(a==='t0'){st.talk=0;st.q='';st.phase='done'}
+  else if(TQ(a)){
+   var Q=TQ(a),okq=!!Q.need&&!!st.clues[Q.need];
+   st.hp-=COST.talk;st.min+=TIME.talk;st.q=a;
+   st.talk=okq?1:2;st.phase='done';if(okq)S.chime();
+   note(okq?'c':'x',okq?'상담 — 의뢰인이 이야기를 꺼냈어요.':'상담 — 근거 없는 말에 의뢰인이 입을 닫았어요.')}
+  else if(sel){
+   var o=ITEMS[sel];st.hp-=COST[a];st.min+=TIME[a]||0;
+   if(a==='look'&&st.hp+COST.look<TIRED){st.log='너무 지쳐서 제대로 보지 못했어요.';note('x',o.n+' — 지쳐서 아무것도 찾지 못했어요.');}
+   else if(a==='look'&&!o.clue){st.seen[sel]=1;st.log=o.n+' — 특별한 건 없었어요.';note('g',o.n+'을(를) 살폈지만 아무것도 없었어요.');}
+   else if(a==='look'){st.clues[o.clue.id]=1;st.seen[sel]=1;st.log=o.n+' — '+o.clue.t;note('c',o.n+' — '+o.clue.t);
+    if(sel==='15')say('그 상자는… 그냥 두세요. 아니, 아니에요.');}
+   if(a==='tidy'){st.state[sel]=(sel==='15')?'moved':'gone';st.log=o.n+'을(를) 정리했어요.';note('g',o.n+'을(를) 정리했어요.');
+    if(sel==='16')st.state[sel]='kept',st.log='그릇을 한쪽에 챙겨 뒀어요.';}
+   if(a==='throw'){st.state[sel]='gone';st.log=o.n+'을(를) 버렸어요.';note('k',o.n+'을(를) 버렸어요.');
+    if(sel==='16')say('어… 그릇이 안 보이는데요?','bad');
+    sel=null}
+   if(a==='lift'){st.rug=true;st.log='러그를 들추자 접힌 편지가 나왔어요.';note('g','러그를 들췄어요. 밑에 편지가 있었어요.');sel='H';say('아, 그게 거기 있었네요…');}
+   if(a==='wipe'){st.wiped=true;st.log='창문을 닦았어요. 빛이 조금 더 들어와요.';note('w','특별 주문 — 창문을 닦았어요.');sel=null}
+   if(st.hp<=0){st.hp=0;st.log='체력이 바닥났어요. 오늘은 더 할 수 있는 일이 없어요.'}
+   if(left()<20){st.log=st.late?'밤이 깊었어요. 오늘은 여기까지예요.':'퇴근 시간이에요. 더 하려면 늦게까지 남아야 해요.';
+    if(st.late){st.phase='talk';sel=null;st.mini=null}}
+   if(sel&&st.state[sel]==='gone')sel=null;
+   backToRoom();
+  }
+  paint();panel();
+ }
+ var panX=0,panY=0,SC_=1,drag=null,moved=false;
+ function lim(){var m=$('#trMap'),w=m.offsetWidth,h=m.offsetHeight,pw=innerWidth>860?$('#trPan').offsetWidth:0;
+  return {x0:-(pw+w*.06),x1:w*.16,y0:-h*.2,y1:h*.2}}
+ function applyPan(){var L=lim();panX=Math.max(L.x0,Math.min(L.x1,panX));panY=Math.max(L.y0,Math.min(L.y1,panY));
+  $('#trMv').style.transform='translate('+panX.toFixed(1)+'px,'+panY.toFixed(1)+'px) scale('+SC_+')'}
+ function bindPan(){var m=$('#trMap');if(m._b)return;m._b=1;
+  m.addEventListener('pointerdown',function(e){if(e.button>0)return;if(e.pointerType==='mouse')e.preventDefault();drag={x:e.clientX,y:e.clientY,px:panX,py:panY};moved=false});
+  addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+   if(!moved&&Math.abs(dx)+Math.abs(dy)>6){moved=true;m.classList.add('drag')}
+   if(moved){panX=drag.px+dx;panY=drag.py+(e.pointerType==='touch'?0:dy);applyPan()}});
+  var up=function(){if(drag){drag=null;m.classList.remove('drag')}};
+  addEventListener('pointerup',up);addEventListener('pointercancel',up);
+  m.addEventListener('click',function(e){if(moved){e.stopPropagation();e.preventDefault();moved=false}},true);
+  addEventListener('resize',applyPan)}
+ function homeX(){return innerWidth>860?-$('#trPan').offsetWidth*.42:0}
+ function enter(){
+  if(!st){reset();panX=homeX();panY=0}bindPan();applyPan();
+  if(st.phase==='work'&&!tick)startClock();
+  if(st.phase==='intro'&&$('#trEst').classList.contains('out'))$('#trOb').classList.remove('out');
+  paint();panel()}
+ $('#trOb').addEventListener('click',function(e){var b=e.target.closest('[data-a="play"]');if(b)act('play')});
+ $('#trEst').addEventListener('click',function(e){var b=e.target.closest('[data-a="go"]');if(b)act('go')});
+ $('#trMenu').addEventListener('click',function(){menu(true)});
+ return {enter:enter,leave:function(){stopClock();endHide()}};
+})();
+
+var h=location.hash.slice(1);
+if(h&&$('#v-'+h)&&h!=='home')go(h);
+document.body.classList.toggle('home',cur==='home');
+document.body.classList.toggle('story',cur==='story');
+document.documentElement.classList.toggle('snap',SNAP&&cur==='story');
+reveal();
+})();
+</script>
+<script>
+/* 프롤로그 페이지로 이동 */
+document.querySelectorAll("[data-href]").forEach(function(b){b.addEventListener("click",function(){location.href=b.getAttribute("data-href")})});
+</script></body></html>
