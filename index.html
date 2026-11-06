@@ -1365,7 +1365,8 @@ function go(n){
  menu(false);S.clk();
  $$('.view').forEach(function(v){v.classList.toggle('on',v.id==='v-'+n)});
  $$('#menu .mi').forEach(function(b){b.setAttribute('aria-current',b.dataset.go===n)});
- cur=n;scrollTo(0,0);history.replaceState(null,'','#'+n);
+ cur=n;scrollTo(0,0);
+ try{history.replaceState(null,'','#'+n)}catch(e){}/* sandboxed previews (about:srcdoc) refuse this */
  air(n==='home'?.085:.17,n==='home'?250:800);
  document.body.classList.toggle('home',n==='home');
  document.body.classList.toggle('story',n==='story');
@@ -2233,4 +2234,3 @@ reveal();
 <script>
 /* 프롤로그 페이지로 이동 */
 document.querySelectorAll("[data-href]").forEach(function(b){b.addEventListener("click",function(){location.href=b.getAttribute("data-href")})});
-</script></body></html>
