@@ -100,7 +100,9 @@ ul.b li b{font-weight:500}
 .stage{position:sticky;top:0;height:100svh;overflow:hidden;display:flex;flex-direction:column}
 .htitle{flex:0 0 auto;text-align:center;padding:clamp(74px,11vh,116px) 20px 0;pointer-events:none}
 .htitle h1{font-size:clamp(38px,6.6vw,78px);letter-spacing:.2em;margin-left:.2em;color:var(--ink);line-height:1}
-.htitle p{font-family:"Gowun Batang",serif;font-size:clamp(13px,1.9vw,18px);color:var(--amber);margin:14px auto 0;letter-spacing:.06em}
+.htitle h1.hlogo{margin:0;letter-spacing:normal;font-size:0}
+.hlogo .lg{display:block;width:clamp(148px,17.5vw,230px);height:auto;margin:0 auto}
+.htitle p{font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-weight:500;font-size:clamp(13px,1.9vw,18px);color:var(--amber);margin:15px auto 0;letter-spacing:.02em}
 .hcore{flex:1 1 auto;position:relative;min-height:0;overflow:hidden}
 .blob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
  height:62%;aspect-ratio:1/.94;width:auto;max-width:62vw;
@@ -109,16 +111,12 @@ ul.b li b{font-weight:500}
   repeating-linear-gradient(90deg,rgba(255,228,190,.045) 0 1px,transparent 1px 3px),
   radial-gradient(86% 76% at 32% 24%,rgba(255,206,150,.14),transparent 62%);
  border-radius:47% 53% 50% 50%/49% 44% 56% 51%;filter:url(#rough2)}
-.ringw{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);height:92%;aspect-ratio:1;width:auto;max-width:86vw;pointer-events:none}
-.ringw svg{width:100%;height:100%;animation:spin 58s linear infinite}
-.ringw text{font-family:"Gowun Batang",serif;font-size:27px;fill:var(--amber)}
-@keyframes spin{to{transform:rotate(360deg)}}
 .railw{position:absolute;inset:0;display:flex;align-items:center;overflow:hidden}
 .rail{display:flex;align-items:center;height:56%;will-change:transform}
 .obj{flex:0 0 auto;height:100%;width:min(42vw,230px);margin:0 min(7vw,48px);transition:opacity .55s}
 .obj svg{width:100%;height:100%;display:block;filter:url(#rough) drop-shadow(0 22px 30px rgba(60,26,10,.34))}
 .obj.tch{transform:translateZ(0)}
-.hcore .blob{z-index:0}.hcore .ringw{z-index:1}.hcore .railw{z-index:2}
+.hcore .blob{z-index:0}.hcore .railw{z-index:2}
 .obj.tch svg{filter:none;overflow:visible}
 .hfoot{flex:0 0 auto;text-align:center;padding:0 20px clamp(18px,3vh,30px)}
 .ocap{min-height:28px}
@@ -129,8 +127,6 @@ ul.b li b{font-weight:500}
 @media(max-width:700px){
  .htitle{padding-top:clamp(64px,9vh,88px)}
  .blob{height:auto;width:min(74vw,300px);max-width:none}
- .ringw{height:auto;width:min(94vw,372px);max-width:none}
- .ringw text{font-size:31px}
  .rail{height:auto}
  .obj{height:auto;width:min(54vw,196px);margin:0 12vw}
  .obj svg{height:auto}
@@ -974,13 +970,9 @@ footer b{font-family:"Gowun Batang",serif;font-size:20px;letter-spacing:.14em;co
 <!-- ================= HOME ================= -->
 <div class="view on" id="v-home">
  <div id="track"><div class="stage">
-  <div class="htitle"><h1>환기</h1><p>당신이 치워야 할 것은 무엇인가</p></div>
+  <div class="htitle"><h1 class="hlogo"><svg class="lg" viewBox="0 0 336 320" role="img" aria-label="환기 venting"><path d="M236.636 151.187L241.863 105.505L189.817 98.4593L193.226 78.4593L268.454 84.1412L257.772 155.05L236.636 151.187ZM299.59 178.005V63.6866L325.272 59.5957L322.772 182.323L299.59 178.005Z" fill="#A24B2C"/><path d="M84.1161 51.8688C85.2525 52.5506 86.3889 53.4597 87.5252 54.3688C91.8434 58.2324 94.5707 63.4597 93.4343 69.1415C90.4798 82.3233 79.3434 89.3688 66.3889 90.0506C57.2979 90.7324 46.8434 89.3688 38.6616 84.8233C35.0252 82.5506 31.8434 79.3688 30.4798 75.5051C29.1161 71.8688 29.3434 67.7779 30.4798 64.1415C36.6161 46.187 58.4343 44.5961 74.1161 48.2324C77.5252 48.9142 80.9343 50.0506 84.1161 51.8688ZM66.3889 75.0506C66.8434 74.8233 67.5252 74.5961 67.9798 74.3688C70.4798 72.7779 72.5252 70.0506 71.6161 67.0961C70.4798 63.4597 66.1616 60.9597 60.9343 61.187H60.707C55.0252 61.4142 52.0707 64.3688 51.3889 67.0961C50.4798 69.8233 52.0707 72.7779 55.0252 74.5961C58.4343 76.187 62.7525 76.4142 66.3889 75.0506ZM51.3889 10.7324L73.8888 12.3233V22.7779H103.207L104.571 42.3233L23.6616 44.1415V24.3688L51.3889 24.5961V10.7324ZM95.707 113.914L97.5252 134.823L10.707 136.187L12.2979 112.551L42.9798 113.914V101.187L66.6161 100.051V113.914H95.707ZM167.071 88.9142V106.869L147.98 110.278L148.434 130.505L126.389 133.914L120.934 45.5051L146.616 44.1415V86.8688L167.071 88.9142ZM122.752 203.232L31.3888 196.869L29.5707 152.551H54.3434L56.8434 178.232L122.752 180.732V203.232Z" fill="#A24B2C"/><path d="M265.029 276.955L268.836 256.598L294.709 254.889L294.01 309.82L260.911 311.063V290.396L285.618 282.937V280.529L265.029 276.955ZM268.914 302.828L285.852 301.584L285.696 292.805L268.914 297.855V302.828ZM275.596 264.679L274.896 269.263L286.24 271.361L286.862 263.98L275.596 264.679Z" fill="#A24B2C"/><path d="M220.57 252.325L252.115 250.849L252.97 286.745L243.879 286.822L242.403 261.727L230.205 262.97L231.292 288.376L221.114 288.842L220.57 252.325Z" fill="#A24B2C"/><path d="M202.529 247.508L201.83 237.485L212.863 238.107L212.086 247.042L202.529 247.508ZM202.529 253.413H211.387L212.086 289.076L202.529 289.464V253.413Z" fill="#A24B2C"/><path d="M185.003 278.431L193.239 277.654L194.249 287.91H174.358L175.679 258.075H170.551V250.227L176.223 250.383L176.612 240.749H185.547L185.236 250.538H193.86L193.394 258.075H185.236L185.003 278.431Z" fill="#A24B2C"/><path d="M129.899 252.325L161.444 250.849L162.298 286.745L153.208 286.822L151.732 261.727L139.533 262.97L140.621 288.376L130.443 288.842L129.899 252.325Z" fill="#A24B2C"/><path d="M98.6838 280.063L118.108 279.208L119.196 288.454H87.5732L90.9919 250.771L118.807 251.471L121.759 271.05L98.8392 272.06L98.6838 280.063ZM100.005 258.463L99.2276 264.757L112.98 264.213L111.892 258.463H100.005Z" fill="#A24B2C"/><path d="M68.8025 286.589L53.5741 289.464L43.4736 254.734L53.1079 252.559L60.7222 279.208L69.191 253.491L79.1361 255.045L68.8025 286.589Z" fill="#A24B2C"/></svg></h1></div>
   <div class="hcore">
    <div class="blob"></div>
-   <div class="ringw"><svg viewBox="0 0 400 400" aria-hidden="true">
-    <defs><path id="cp" d="M200,200 m-166,0 a166,166 0 1,1 332,0 a166,166 0 1,1 -332,0"/></defs>
-    <text textLength="1043" lengthAdjust="spacing"><textPath href="#cp">마주하고 · 정돈하고 · 과감히 버려라 ·</textPath></text>
-   </svg></div>
    <div class="railw"><div class="rail" id="rail"></div></div>
   </div>
   <div class="hfoot">
