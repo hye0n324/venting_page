@@ -38,10 +38,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* hotspots */
 .hs{cursor:pointer}
 .hs .ht{fill:rgba(0,0,0,0)}
-.hs .hc{fill:rgba(18,11,6,.55);stroke:rgba(248,242,231,.75);stroke-width:1.6}
+.hs .hc{fill:rgba(18,11,6,.55);stroke:rgba(248,242,231,.75);stroke-width:1.2}
 .hs .hd{fill:#F8F2E7}
-.hs .hr{fill:none;stroke:var(--amber);stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
-.hs text{fill:#FFF6EB;font:700 14px var(--disp);paint-order:stroke;stroke:rgba(14,8,4,.9);stroke-width:3.4px;pointer-events:none;opacity:0;transition:opacity .2s}
+.hs .hr{fill:none;stroke:var(--amber);stroke-width:1.6;opacity:0;transform-box:fill-box;transform-origin:center}
+.hs text{fill:#FFF6EB;font:700 10.5px var(--disp);paint-order:stroke;stroke:rgba(14,8,4,.9);stroke-width:2.6px;pointer-events:none;opacity:0;transition:opacity .2s}
 .hs:hover .hc,.hs:focus-visible .hc,.hs.sel .hc{fill:var(--amber);stroke:#FFF6EB}
 .hs:hover text,.hs:focus-visible text,.hs.sel text{opacity:1}
 .hs.sel .hr,.hs.ring .hr{opacity:1;animation:ringp 1.6s infinite}
@@ -57,6 +57,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ov button,.ov .card{pointer-events:auto}
 .shade{background:rgba(18,11,6,.62);backdrop-filter:blur(2px)}
 .ttl h1{font:700 clamp(46px,9cqw,104px)/1 var(--disp);letter-spacing:.2em;margin:0 0 0 .2em;color:var(--ink)}
+.ttl h1.hlogo{margin:0;letter-spacing:normal;font-size:0}
+.hlogo .lg{display:block;width:clamp(170px,30cqw,330px);height:auto;margin:0 auto}
 .ttl p{font:400 clamp(13px,1.7cqw,19px) var(--disp);color:var(--amber-hi);letter-spacing:.06em;margin:14px 0 0}
 .ttl .lab{margin-bottom:18px}
 .rec{max-width:30em;display:flex;flex-direction:column;gap:14px}
@@ -138,18 +140,29 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .wipe .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--paper-red);width:0}
 .wipe span{position:absolute;inset:0;display:grid;place-items:center;font:400 15px var(--disp);color:#4E6E8E;pointer-events:none;mix-blend-mode:multiply}
 
-/* call (phone card) */
-.phone{width:min(76%,380px);max-height:88%;display:flex;flex-direction:column;background:#EDE6D6;color:var(--paper-ink);border:3px solid #3A2E22;border-radius:22px;overflow:hidden;box-shadow:0 18px 40px -12px rgba(0,0,0,.7)}
-.phone header{padding:10px 14px;background:#3A2E22;color:#F4ECD8;display:flex;justify-content:space-between;align-items:baseline}
+/* call (phone card) — the original frame, drawn with the same wobbly line as the room objects */
+.phone{position:relative;width:min(76%,380px);max-height:88%;display:flex;flex-direction:column;
+  color:var(--paper-ink);animation:fin .4s both}
+.phone::before{content:"";position:absolute;inset:0;z-index:0;
+  background:linear-gradient(#3A2E22 0 var(--hh,41px),#EDE6D6 var(--hh,41px));
+  border:3px solid #3A2E22;border-radius:22px;box-shadow:0 18px 40px -12px rgba(0,0,0,.7);
+  filter:url(#wob)}
+.phone>*{position:relative;z-index:1}
+.phone header{padding:10px 14px;background:none;color:#F4ECD8;display:flex;justify-content:space-between;align-items:baseline}
 .phone header b{font:700 15px var(--disp)}
 .phone header span{font:500 9.5px/1 var(--mono);letter-spacing:.2em;opacity:.7}
-.thread{padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:150px;text-align:left}
+.thread{padding:12px 14px 15px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:150px;text-align:left}
 .bub{max-width:84%;padding:9px 12px;font:400 14px/1.6 var(--disp);border-radius:4px 14px 14px 14px;background:#FBF5E6;border:1.5px solid #C6B693;align-self:flex-start}
 .bub.me{align-self:flex-end;border-radius:14px 4px 14px 14px;background:#E8C9B0;border-color:#C98A4E}
 .bub.sys{align-self:center;background:none;border:0;font:400 12px/1.6 var(--body);color:var(--paper-mut);text-align:center;padding:2px 6px}
 .bub.in{animation:pop .4s both}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 .typing{align-self:flex-start;font:500 11px var(--mono);letter-spacing:.3em;color:var(--paper-mut);padding:4px 8px}
+@media (max-width:860px){
+  .ov{padding-top:calc(58px + env(safe-area-inset-top,0px))}
+  .phone{width:min(92%,380px);max-height:100%}
+  .thread{min-height:96px}
+}
 
 .mess{display:flex;flex-direction:column;gap:10px}
 .rcp{font-family:var(--mono);font-size:12px}
@@ -211,8 +224,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 @media (max-width:860px){
   body{width:100%;height:auto;min-height:100svh;overflow-y:auto;overflow-x:hidden;display:block}
-  .game{height:auto;min-height:100svh;grid-template-columns:1fr;overflow:visible}
-  .scene{aspect-ratio:10/8;min-height:300px;position:relative}
+  .game{height:auto;min-height:100svh;grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow:visible}
+  .scene{aspect-ratio:auto;width:100%;height:min(48svh,430px);min-height:260px;position:relative}
   .panel{height:auto;padding-top:16px;overflow:visible;border-left:0;border-top:1px solid var(--line)}
   #bar{background:linear-gradient(180deg,rgba(18,11,6,.92) 0%,rgba(18,11,6,.6) 70%,transparent 100%);padding-bottom:14px}
   #menu .mi .dot{display:none}
@@ -224,6 +237,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<filter id="wob" x="-8%" y="-8%" width="116%" height="116%">
+<feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="1" seed="5" result="n"/>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+</filter></defs></svg>
 
 <!-- ================= TOP BAR ================= -->
 <div id="bar">
@@ -266,7 +284,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 <main class="game" id="game">
   <section class="scene" id="scene" aria-label="장면">
-    <svg id="room" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="어수선한 방"></svg>
+    <svg id="room" viewBox="118 44 764 652" preserveAspectRatio="xMidYMid meet" role="img" aria-label="어수선한 방"></svg>
     <div class="ov" id="ov"></div>
     <div class="slate" id="slate" aria-live="polite"></div>
   </section>
@@ -426,11 +444,23 @@ function renderRoom(){
       var c=iso(o.x+o.sx/2,o.y+o.sy/2,(o.z||0)+o.sz+.35);
       var cls='hs'+(S.sel===id?' sel':'')+(isDone(id)?' done':'')+(isKey(id)&&!isDone(id)?' key':'')+(id==='phone'&&S.phase==='ring'?' ring':'');
       s+='<g class="'+cls+'" data-act="sel" data-id="'+id+'" tabindex="0" role="button" aria-label="'+ITEMS[id].n+'" transform="translate('+c[0].toFixed(1)+' '+c[1].toFixed(1)+')">'
-       +'<circle class="ht" r="26"/><circle class="hr" r="17"/><circle class="hc" r="14"/><circle class="hd" r="4"/>'
-       +'<text x="0" y="-24" text-anchor="middle">'+(isKey(id)?'◆ ':'')+(id==='jar'&&S.jarMarked?'[보호] ':'')+ITEMS[id].n+'</text></g>'});
+       +'<circle class="ht" r="20"/><circle class="hr" r="12.5"/><circle class="hc" r="10"/><circle class="hd" r="3"/>'
+       +'<text x="0" y="-18" text-anchor="middle">'+(isKey(id)?'◆ ':'')+(id==='jar'&&S.jarMarked?'[보호] ':'')+ITEMS[id].n+'</text></g>'});
     s+='</g>'}
-  $('#room').innerHTML=s}
+  $('#room').innerHTML=s;fitRoom()}
 
+/* keep the room filling the scene: crop a little rather than leaving wide margins */
+var RB={x:118,y:44,w:764,h:652};
+function fitRoom(){
+  var el=$('#room');if(!el)return;var sc=el.parentNode,w=sc.clientWidth,h=sc.clientHeight;
+  if(!w||!h)return;
+  var meet=Math.min(w/RB.w,h/RB.h),s=Math.min(Math.max(w/RB.w,h/RB.h),meet*1.25)*.9;
+  var vw=w/s,vh=h/s,cx=RB.x+RB.w/2,cy=RB.y+RB.h*.48;
+  el.setAttribute('viewBox',(cx-vw/2).toFixed(1)+' '+(cy-vh/2).toFixed(1)+' '+vw.toFixed(1)+' '+vh.toFixed(1))}
+var fitT=0;
+addEventListener('resize',function(){cancelAnimationFrame(fitT);fitT=requestAnimationFrame(fitRoom)});
+
+var LOGO='<svg class="lg" viewBox="0 0 336 320" role="img" aria-label="환기 venting"><path d="M236.636 151.187L241.863 105.505L189.817 98.4596L193.226 78.4596L268.454 84.1414L257.772 155.051L236.636 151.187ZM299.59 178.005V63.6869L325.272 59.5959L322.772 182.323L299.59 178.005Z" fill="#A24B2C"/><path d="M332.529 194.313L289.59 186.315V55.1536L335.514 47.8381L332.529 194.313ZM279.946 74.9807L266.123 166.742L225.637 159.342L230.813 114.1L178.221 106.981L184.898 67.802L279.946 74.9807ZM189.817 98.4592L241.863 105.505L236.636 151.187L257.771 155.05L268.454 84.1418L193.227 78.4592L189.817 98.4592ZM299.59 178.005L322.771 182.323L325.271 59.5959L299.59 63.6868V178.005Z" fill="#FFF8F6"/><path d="M84.1161 51.8688C85.2525 52.5506 86.3889 53.4597 87.5252 54.3688C91.8434 58.2324 94.5707 63.4597 93.4343 69.1415C90.4798 82.3233 79.3434 89.3688 66.3889 90.0506C57.2979 90.7324 46.8434 89.3688 38.6616 84.8233C35.0252 82.5506 31.8434 79.3688 30.4798 75.5051C29.1161 71.8688 29.3434 67.7779 30.4798 64.1415C36.6161 46.187 58.4343 44.5961 74.1161 48.2324C77.5252 48.9142 80.9343 50.0506 84.1161 51.8688ZM66.3889 75.0506C66.8434 74.8233 67.5252 74.5961 67.9798 74.3688C70.4798 72.7779 72.5252 70.0506 71.6161 67.0961C70.4798 63.4597 66.1616 60.9597 60.9343 61.187H60.707C55.0252 61.4142 52.0707 64.3688 51.3889 67.0961C50.4798 69.8233 52.0707 72.7779 55.0252 74.5961C58.4343 76.187 62.7525 76.4142 66.3889 75.0506ZM51.3889 10.7324L73.8888 12.3233V22.7779H103.207L104.571 42.3233L23.6616 44.1415V24.3688L51.3889 24.5961V10.7324ZM95.707 113.914L97.5252 134.823L10.707 136.187L12.2979 112.551L42.9798 113.914V101.187L66.6161 100.051V113.914H95.707ZM167.071 88.9142V106.869L147.98 110.278L148.434 130.505L126.389 133.914L120.934 45.5051L146.616 44.1415V86.8688L167.071 88.9142ZM122.752 203.232L31.3888 196.869L29.5707 152.551H54.3434L56.8434 178.232L122.752 180.732V203.232Z" fill="#A24B2C"/><path d="M56.8438 178.232L54.3438 152.551H29.5703L31.3887 196.869L122.753 203.232V180.732L56.8438 178.232ZM74.1162 48.2324C58.4344 44.5961 36.6159 46.187 30.4795 64.1416C29.3432 67.7778 29.116 71.8687 30.4795 75.5049C31.8431 79.3684 35.0249 82.5505 38.6611 84.8232C46.8429 89.3687 57.2978 90.7326 66.3887 90.0508C79.1408 89.3796 90.1315 82.542 93.29 69.7549L93.4346 69.1416C94.5354 63.6375 92.0103 58.5599 87.9258 54.7354L87.5254 54.3691C86.3891 53.4601 85.2525 52.5509 84.1162 51.8691C80.9344 50.051 77.5253 48.9142 74.1162 48.2324ZM60.9346 61.1865C66.1616 60.9594 70.4797 63.4596 71.6162 67.0957C72.5253 70.0503 70.4795 72.7782 67.9795 74.3691C67.5249 74.5964 66.8431 74.8236 66.3887 75.0508C62.7524 76.4143 58.4344 76.1866 55.0254 74.5957C52.0709 72.7775 50.4796 69.823 51.3887 67.0957C52.0706 64.3685 55.0254 61.4138 60.707 61.1865H60.9346ZM146.616 86.8691V44.1416L120.935 45.5049L126.389 133.914L148.435 130.505L147.979 110.278L167.07 106.869V88.9141L146.616 86.8691ZM42.9795 113.914L12.2979 112.551L10.707 136.187L97.5254 134.823L95.707 113.914H66.6162V100.051L42.9795 101.187V113.914ZM51.3887 10.7324V24.5957L23.6611 24.3691V44.1416L104.57 42.3232L103.207 22.7783H73.8887V12.3232L51.3887 10.7324ZM83.8887 12.7783H112.533L114.144 35.8506L156.616 33.5967V77.8184L177.07 79.8643V115.241L158.169 118.616L158.629 139.048L117.083 145.472L111.326 52.1738L99.0928 52.4492C102.547 57.4379 104.695 63.8266 103.24 71.1025L103.218 71.2158L103.192 71.3291C99.8592 86.1995 89.0765 95.0712 76.6162 98.4844V103.914H104.875L108.418 144.653L63.6895 145.355L65.9492 168.569L132.753 171.104V213.953L21.7646 206.223L19.2959 146.053L0 146.356L2.97656 102.127L32.9795 103.459V93.0605C28.3819 90.1074 23.4634 85.4906 21.1172 79.0156L21.1162 79.0166C18.7732 72.7685 19.3248 66.3107 20.9346 61.1592L20.9746 61.0322L21.0176 60.9072C21.8654 58.4265 22.9259 56.1732 24.1611 54.1318L23.8867 54.1387L13.6611 54.3691V14.2861L41.3887 14.5137V0L83.8887 3.00586V12.7783Z" fill="#FFF8F6"/><path d="M265.029 276.955L268.836 256.598L294.709 254.889L294.01 309.82L260.911 311.063V290.396L285.618 282.937V280.529L265.029 276.955ZM268.914 302.828L285.852 301.584L285.696 292.805L268.914 297.855V302.828ZM275.596 264.679L274.896 269.263L286.24 271.361L286.862 263.98L275.596 264.679Z" fill="#A24B2C"/><path d="M301.685 317.307L253.142 319.13V284.626L257.032 283.452L255.945 283.264L262.307 249.243L302.585 246.583L301.685 317.307ZM285.851 301.584L268.914 302.828V297.855L285.697 292.805L285.851 301.584ZM286.24 271.361L274.896 269.263L275.596 264.679L286.862 263.98L286.24 271.361ZM260.911 311.063L294.009 309.821L294.709 254.889L268.836 256.599L265.029 276.955L285.618 280.529V282.937L260.911 290.397V311.063Z" fill="#FFF8F6"/><path d="M220.57 252.325L252.114 250.849L252.969 286.745L243.879 286.822L242.402 261.727L230.204 262.97L231.292 288.376L221.114 288.842L220.57 252.325Z" fill="#A24B2C"/><path d="M260.924 294.447L239.336 294.631L239.386 295.783L213.464 296.97L212.688 244.916L259.692 242.716L260.924 294.447ZM220.57 252.326L221.114 288.843L231.292 288.376L230.204 262.969L242.402 261.727L243.878 286.822L252.969 286.745L252.114 250.849L220.57 252.326Z" fill="#FFF8F6"/><path d="M202.529 247.508L201.83 237.485L212.863 238.107L212.086 247.042L202.529 247.508ZM202.529 253.413H211.387L212.086 289.076L202.529 289.464V253.413Z" fill="#A24B2C"/><path d="M221.298 230.8L219.239 254.472L219.178 254.475L220.003 296.53L194.76 297.556V247.787L193.466 229.232L221.298 230.8ZM202.53 253.413V289.464L212.086 289.076L211.387 253.413H202.53ZM202.53 247.508L212.086 247.042L212.863 238.107L201.83 237.485L202.53 247.508Z" fill="#FFF8F6"/><path d="M185.003 278.431L193.239 277.654L194.249 287.91H174.358L175.679 258.075H170.551V250.227L176.223 250.383L176.612 240.749H185.547L185.236 250.538H193.86L193.394 258.075H185.236L185.003 278.431Z" fill="#A24B2C"/><path d="M193.567 232.979L193.256 242.768H202.125L200.698 265.844H192.917L192.871 269.884L200.212 269.192L202.821 295.68H166.237L167.558 265.844H162.782V242.242L168.77 242.406L169.149 232.979H193.567ZM176.611 240.749L176.223 250.383L170.551 250.228V258.075H175.679L174.359 287.91H194.249L193.239 277.654L185.002 278.431L185.236 258.075H193.394L193.86 250.538H185.236L185.547 240.749H176.611Z" fill="#FFF8F6"/><path d="M129.899 252.325L161.444 250.849L162.298 286.745L153.208 286.822L151.732 261.727L139.533 262.97L140.621 288.376L130.443 288.842L129.899 252.325Z" fill="#A24B2C"/><path d="M170.253 294.447L148.665 294.631L148.715 295.783L122.794 296.97L122.018 244.916L169.022 242.716L170.253 294.447ZM129.899 252.326L130.443 288.843L140.621 288.376L139.534 262.969L151.731 261.727L153.208 286.822L162.299 286.745L161.443 250.849L129.899 252.326Z" fill="#FFF8F6"/><path d="M98.6838 280.063L118.108 279.208L119.196 288.454H87.5732L90.9919 250.771L118.807 251.471L121.759 271.05L98.8392 272.06L98.6838 280.063ZM100.005 258.463L99.2276 264.757L112.98 264.213L111.892 258.463H100.005Z" fill="#A24B2C"/><path d="M125.518 243.867L130.73 278.431L125.864 278.645L127.933 296.223H79.0669L83.9115 242.821L125.518 243.867ZM87.5732 288.454H119.196L118.108 279.208L98.6836 280.063L98.8392 272.06L121.759 271.05L118.807 251.471L90.9922 250.771L87.5732 288.454ZM111.892 258.463L112.98 264.212L99.2276 264.757L100.005 258.463H111.892Z" fill="#FFF8F6"/><path d="M68.8025 286.589L53.5741 289.464L43.4736 254.734L53.1079 252.558L60.7222 279.208L69.191 253.491L79.1361 255.045L68.8025 286.589Z" fill="#A24B2C"/><path d="M61.2481 252.768L63.8742 244.796L89.3644 248.779L74.7562 293.372L63.5403 295.488L59.4014 296.301L57.613 296.608L48.0838 298.407L33.707 248.974L58.5607 243.362L61.2481 252.768ZM43.4737 254.734L53.5741 289.464L68.8023 286.589L79.1364 255.045L69.1907 253.491L60.7223 279.208L53.1083 252.558L43.4737 254.734Z" fill="#FFF8F6"/></svg>';
 /* ---------- scene overlay ---------- */
 function stats(){
   var low=S.hp<30;
@@ -442,7 +472,7 @@ function renderOverlay(){
   ov.className='ov';
   if(S.phase==='title'){
     ov.className='ov shade ttl';
-    h='<span class="lab">TUTORIAL BETA · PROLOGUE</span><h1>환기</h1><p>당신이 치워야 할 것은 무엇인가</p>'}
+    h='<span class="lab">TUTORIAL BETA · PROLOGUE</span><h1 class="hlogo">'+LOGO+'</h1>'}
   else if(S.phase==='recall'){
     ov.className='ov shade';
     if(S.step===0)h='<div class="rec"><p class="em">1년 전에는 어떻게 일했더라…</p><p>열심히 했던 거 같기도 하고, 아니었던 거 같기도 하고.</p></div>';
@@ -497,21 +527,27 @@ function CN(id){
   var lostJar=S.jarDone&&!S.jarKept,keptJar=S.jarDone&&S.jarKept;
   var N={
     P5C:{lines:[['fam','택배 잘 받았니? 파란 뚜껑 통은 꼭 다시 보내 줘. 오래 쓴 거라서.']],
-      ch:[{t:'알겠다고 한다',go:'P5Ca'}].concat(keptJar?[{t:'용기를 이미 챙겨 뒀다고 한다',go:'P5Cb'}]:[])},
+      ch:[{t:'알겠다고 한다',say:lostJar?'…응, 알겠어.':'응, 알겠어. 챙겨서 보낼게.',go:'P5Ca'}]
+        .concat(keptJar?[{t:'이미 챙겨 뒀다고 한다',say:'그 통 벌써 씻어서 챙겨 뒀어.',go:'P5Cb'}]:[])},
     P5Ca:{lines:[['fam',lostJar?'…그래, 괜찮아. 바쁘면 나중에 얘기하자.':'그래, 바쁘면 나중에 얘기하자.'],['sys','(통화가 끝난다.)']],end:1},
     P5Cb:{lines:[['fam','고맙네. 잘 두었구나.'],['sys','(통화가 끝난다.)']],end:1},
-    P5M:{mode:'msg',lines:[['sys','부재중 전화가 한 통 남는다. 곧 문자가 온다.'],['fam','택배 받았니? 파란 뚜껑 통은 꼭 다시 보내 줘.']],ch:[{t:'문자를 닫는다',go:'P6M'}]},
+    P5M:{mode:'msg',lines:[['sys','부재중 전화가 한 통 남는다. 곧 문자가 온다.'],['fam','택배 받았니? 파란 뚜껑 통은 꼭 다시 보내 줘.']],ch:[{t:'문자를 닫는다',sys:'(답장은 하지 않고 문자를 닫는다.)',go:'P6M'}]},
     P6M:{lines:[['sys','하루 일을 마무리하려는데 문자가 한 통 더 온다.'],['fam',lostJar?'…그래, 괜찮아.':'그래, 수고했다.']],end:1},
-    T1:{lines:[['fam','택배 잘 받았니? 파란 뚜껑 통은 꼭 다시 보내 줘. 오래 쓴 거라서.']],ch:[{t:'꼭 보낼게요',go:'T1a'},{t:'오래 쓰신 거라고 하셨는데…',go:'T1b'}]},
+    T1:{lines:[['fam','택배 잘 받았니? 파란 뚜껑 통은 꼭 다시 보내 줘. 오래 쓴 거라서.']],ch:[{t:'꼭 보내겠다고 한다',say:'응, 꼭 보낼게.',go:'T1a'},
+        {t:'무슨 통인지 물어본다',say:'근데 그거 왜 그렇게 아껴?',go:'T1b'}]},
     T1a:{lines:[['fam','그래, 고맙다.']],next:'T2'},
     T1b:{lines:[['fam','할머니 때부터 쓴 거라서, 그냥 정이 들었어.']],next:'T2'},
     T2:{lines:[['sys','(잠깐 정적. 가족이 말을 고르는 듯하다.)']],
-      ch:[{t:'잘 지내고 있어요',go:'T2a'}].concat(S.clue?[{t:'메모 마지막 줄을 읽었어요',go:'T2b',fn:function(){S.success=true}}]:[]).concat([{t:'잠자코 듣는다',go:'T2c'}])},
+      ch:[{t:'잘 지낸다고 한다',say:'나 잘 지내고 있어.',go:'T2a'}]
+        .concat(S.clue?[{t:'메모를 끝까지 읽었다고 말한다',say:'메모 마지막 줄까지 다 읽었어.',go:'T2b',fn:function(){S.success=true}}]:[])
+        .concat([{t:'잠자코 듣는다',sys:'(아무 말도 하지 않고 듣는다.)',go:'T2c'}])},
     T2a:{lines:[['fam','그래…']],next:'T3'},
     T2b:{lines:[['fam','…그래, 요즘 연락이 뜸해서. 별일 없지?']],next:'T3'},
     T2c:{lines:[['fam','…듣고 있니? 괜찮으면 됐어.']],next:'T3'},
     T3:{lines:[['sys','(통화가 마무리될 즈음, 정리한 이야기를 꺼낼 수 있다.)']],
-      ch:[{t:'택배 정리 다 했어요',go:'T3a'}].concat(keptJar?[{t:'용기는 잘 챙겨 뒀어요',go:'T3b'}]:[]).concat((S.success&&keptJar)?[{t:'말씀해 주신 대로 했어요. 연락 자주 드릴게요',go:'T3c',fn:function(){S.best=true}}]:[])},
+      ch:[{t:'택배는 다 정리했다고 한다',say:'보내 준 거 오늘 다 정리했어.',go:'T3a'}]
+        .concat(keptJar?[{t:'용기를 챙겨 뒀다고 한다',say:'그 통은 따로 씻어서 챙겨 뒀어.',go:'T3b'}]:[])
+        .concat((S.success&&keptJar)?[{t:'말한 대로 했다고, 자주 연락하겠다고 한다',say:'말한 대로 다 했어. 앞으로 연락 자주 할게.',go:'T3c',fn:function(){S.best=true}}]:[])},
     T3a:{lines:[['fam',lostJar?'…그래, 괜찮아.':'그래, 수고했다.'],['sys','(통화가 끝난다.)']],end:1},
     T3b:{lines:[['fam','고마워. 걱정 안 해도 되겠네.'],['sys','(통화가 끝난다.)']],end:1},
     T3c:{lines:[['fam','그래… 그 말 들으니까 마음이 놓인다. :)'],['sys','(통화가 끝난다.)']],end:1}
@@ -542,7 +578,8 @@ function pickChoice(i){
   if(ch.end){TOKEN++;S.call=null;S.phase='wrap';S.min=Math.max(S.min,S.evening?510:420);render();return}
   if(ch.fn)ch.fn();
   c.lines.forEach(function(l){l.seen=true});
-  c.lines.push({who:'me',text:ch.t,seen:false,delay:0});
+  if(ch.say)c.lines.push({who:'me',text:ch.say,seen:false,delay:0});
+  else if(ch.sys)c.lines.push({who:'sys',text:ch.sys,seen:false,delay:0});
   goNode(ch.go)}
 
 /* ---------- panel ---------- */
@@ -754,7 +791,9 @@ function bindMini(){
 /* ---------- render ---------- */
 function render(){
   renderRoom();renderOverlay();renderPanel();bindMini();
-  if(S.call){S.call.lines.forEach(function(l){l.seen=true});var t=$('#thread');if(t)t.scrollTop=t.scrollHeight}}
+  if(S.call){S.call.lines.forEach(function(l){l.seen=true});var t=$('#thread');if(t)t.scrollTop=t.scrollHeight}
+  var ph=document.querySelector('.phone');
+  if(ph){var hd=ph.querySelector('header');if(hd)ph.style.setProperty('--hh',hd.offsetHeight+'px')}}
 
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-act]');if(!el)return;
