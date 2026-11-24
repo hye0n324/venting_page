@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>환기 · 1분기 평판 루프 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14100C; --stage:#20160F; --ink:#F8F2E7; --mut:rgba(248,242,231,.62); --line:rgba(248,242,231,.18);
+  --amber:#C0562B; --amber-hi:#E0835A; --cold:#4E6E8E; --warm:#E0A58A;
+  --paper:#F4ECD8; --paper-ink:#3A2E22; --paper-mut:#8A7355; --paper-line:#BFAF90; --paper-red:#A8492A;
+  --disp:"Gowun Batang",serif; --body:"IBM Plex Sans KR",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:400 14px/1.6 var(--body);word-break:keep-all}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:disabled{opacity:.38;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--amber-hi);outline-offset:2px}
+.lab{font:500 10px/1 var(--mono);letter-spacing:.22em;color:var(--mut);text-transform:uppercase}
+.game{display:grid;grid-template-columns:1fr clamp(380px,34vw,540px);height:100vh;background:var(--stage)}
+.scene{position:relative;overflow:hidden;background:#1A110A;display:flex;align-items:center;justify-content:center;padding:28px}
+.scene::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,238,206,.035) 0 2px,transparent 2px 4px),radial-gradient(120% 100% at 50% 46%,transparent 55%,rgba(12,7,3,.55) 100%)}
+.panel{overflow-y:auto;padding:22px clamp(16px,2vw,26px) 28px;display:flex;flex-direction:column;gap:12px;
+  background:linear-gradient(270deg,#1A110A,#20160F);border-left:1px solid var(--line)}
+@media (max-width:860px){.game{grid-template-columns:1fr;height:auto}.scene{min-height:62vh}.panel{border-left:0;border-top:1px solid var(--line)}}
+
+/* dashboard */
+.dash{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dash div{background:rgba(248,242,231,.05);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
+.dash span{display:block;font:500 9.5px/1 var(--mono);letter-spacing:.14em;color:var(--mut)}
+.dash b{display:block;font:500 15px/1.4 var(--mono);margin-top:4px}
+.dash b.low{color:var(--amber-hi)}
+.rep{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:rgba(248,242,231,.03)}
+.rep h4{margin:0 0 6px;font:700 13px/1.3 var(--disp)}
+.rep .r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;border-top:1px dashed var(--line)}
+.rep .r:first-of-type{border-top:0}
+.rep .r span{color:var(--mut)}
+.rep .r b{font-weight:500;text-align:right}
+.lv{display:inline-flex;gap:3px;vertical-align:middle;margin-left:6px}
+.lv i{width:16px;height:6px;border-radius:3px;background:rgba(248,242,231,.15)}
+.lv i.on{background:var(--amber-hi)}
+.logbtn{font:500 11px/1 var(--mono);color:var(--mut);letter-spacing:.1em;text-align:left;padding:4px 0}
+.logbtn:hover{color:var(--ink)}
+ul.rlog{margin:4px 0 0;padding:0;list-style:none;max-height:180px;overflow-y:auto}
+ul.rlog li{font-size:12px;line-height:1.5;padding:5px 0;border-top:1px dashed var(--line);color:var(--mut)}
+ul.rlog li b{color:var(--ink);font-weight:500}
+
+/* buttons & paper */
+.stack{display:flex;flex-direction:column;gap:7px}
+.d{display:block;width:100%;text-align:left;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:rgba(248,242,231,.04);transition:background .15s,border-color .15s}
+.d:hover:not(:disabled){background:rgba(248,242,231,.09);border-color:rgba(248,242,231,.4)}
+.d small{display:block;color:var(--mut);font-size:11.5px;margin-top:2px}
+.d.go{background:var(--amber);border-color:var(--amber);color:#FFF6EB}
+.d.go:hover:not(:disabled){background:var(--amber-hi)}
+.d.warn{border-color:rgba(224,131,90,.6)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.row2 .d,.row3 .d{text-align:center;padding:10px 6px}
+.paper{background:var(--paper);color:var(--paper-ink);border-radius:4px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.paper h5{margin:0 0 8px;font:700 15px/1.3 var(--disp);display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid var(--paper-ink);padding-bottom:6px}
+.paper h5 span{font:500 10px/1 var(--mono);letter-spacing:.18em;color:var(--paper-mut)}
+.paper .row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed var(--paper-line);font-size:13px}
+.paper .row:last-child{border-bottom:0}
+.paper .row span{color:var(--paper-mut);flex:0 0 auto}
+.paper .row b{font-weight:500;text-align:right}
+.paper .row.minus b{color:var(--paper-red)}
+.paper .row.sum{border-top:1.5px solid var(--paper-ink);border-bottom:0;margin-top:4px;padding-top:8px;font-size:14px}
+.paper .row.sum b{font-family:var(--mono);font-size:16px}
+.paper .note{font-size:12px;color:var(--paper-mut);margin:8px 0 0}
+.paper .quote{font:400 13.5px/1.6 var(--disp);margin:8px 0 0;padding:8px 10px;background:rgba(58,46,34,.06);border-left:2px solid var(--paper-mut)}
+.msg{font-size:13px;line-height:1.6;color:var(--ink);background:rgba(248,242,231,.05);border-left:2px solid var(--amber);padding:8px 12px;border-radius:0 8px 8px 0}
+.msg.cold{border-left-color:var(--cold)}
+.hint{font-size:12px;color:var(--mut);margin:0}
+.clues{margin:0;padding:0;list-style:none}
+.clues li{font-size:12.5px;padding:6px 0;border-top:1px dashed var(--line)}
+.clues li b{display:block;font-weight:500;font-size:12px;color:var(--amber-hi)}
+.tag{display:inline-block;font:500 10px/1 var(--mono);letter-spacing:.12em;padding:3px 6px;border-radius:4px;border:1px solid var(--line);color:var(--mut);margin-right:4px}
+.tag.main{border-color:var(--amber);color:var(--amber-hi)}
+.tag.prot{border-color:var(--paper-red);color:#E7A089}
+.tag.sp{border-color:#B79A5C;color:#E2C88E}
+
+/* title */
+.ttl{text-align:center;position:relative;z-index:2}
+.ttl h1{font:700 clamp(56px,9vw,108px)/1 var(--disp);letter-spacing:.2em;margin:0 0 0 .2em}
+.ttl p{color:var(--mut);margin:14px 0 0;font:400 15px/1.6 var(--disp)}
+
+/* phone / inbox */
+.phone{width:min(340px,80%);aspect-ratio:9/17;max-height:88%;background:#0F0B08;border:1.5px solid rgba(248,242,231,.25);border-radius:30px;padding:16px 12px;display:flex;flex-direction:column;position:relative;z-index:2}
+.phone .bar{font:500 11px/1 var(--mono);color:var(--mut);display:flex;justify-content:space-between;padding:2px 10px 12px}
+.phone h3{margin:0 8px 8px;font:700 17px/1.2 var(--disp)}
+.thread{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.th{display:block;text-align:left;width:100%;padding:10px;border-radius:12px}
+.th:hover,.th.on{background:rgba(248,242,231,.07)}
+.th b{display:flex;justify-content:space-between;font-weight:500;font-size:13px}
+.th b em{font:400 10.5px var(--mono);color:var(--mut);font-style:normal}
+.th span{display:block;font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bubble{background:#2A1F17;border-radius:14px 14px 14px 4px;padding:10px 12px;font-size:13px;line-height:1.55;margin:6px 8px}
+.empty{color:var(--mut);font-size:12.5px;text-align:center;margin:30px 8px}
+
+/* room */
+.roomwrap{position:relative;width:min(100%,780px);aspect-ratio:4/3;z-index:2}
+.room{position:absolute;inset:0;border-radius:6px;overflow:hidden;transition:filter 1.2s ease;
+  background:linear-gradient(180deg,#6B5A4A 0 36%,#4A3C30 36% 37%,#7D6A57 37% 100%)}
+.room .win{position:absolute;left:8%;top:6%;width:22%;height:24%;background:linear-gradient(180deg,#B9C4C8,#8E9AA0);border:5px solid #3E3128;border-radius:2px}
+.room .win::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;background:#3E3128}
+.room .wall2{position:absolute;right:8%;top:8%;width:18%;height:20%;border:2px dashed rgba(30,22,15,.35)}
+.room .floorline{position:absolute;left:0;right:0;top:37%;bottom:0;background:repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 2px,transparent 2px 70px)}
+.tint{position:absolute;inset:0;pointer-events:none;transition:background 1.2s ease,opacity 1.2s ease;mix-blend-mode:soft-light}
+.ob{position:absolute;transform:translate(-50%,-50%);min-width:86px;max-width:130px;padding:8px 9px;border-radius:8px;text-align:center;
+  background:#3C2F25;border:1.5px solid rgba(20,14,9,.6);color:#F4ECD8;font-size:11.5px;line-height:1.35;box-shadow:0 4px 0 rgba(20,14,9,.45);transition:opacity .5s,transform .25s,background .3s}
+.ob:hover{transform:translate(-50%,-54%)}
+.ob.sel{outline:2.5px solid var(--amber-hi);outline-offset:2px}
+.ob.k-e{background:#4A3426}.ob.k-c{background:#3A3730}
+.ob.prot{border-color:#C4674A;border-style:dashed}
+.ob.sp{background:#5A4A2C}
+.ob.moved{opacity:.42;background:#2F261E}
+.ob.kept{opacity:.6;background:#2E2A22;border-style:dotted}
+.ob.gone{opacity:0;pointer-events:none;transform:translate(-50%,-30%) scale(.8)}
+.ob.new{animation:pop .8s ease}
+.ob i{display:block;font:500 9px/1 var(--mono);letter-spacing:.1em;opacity:.7;margin-top:3px;font-style:normal}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.6);opacity:0}60%{transform:translate(-50%,-50%) scale(1.08);opacity:1}}
+.clock{position:absolute;top:10px;right:12px;z-index:3;font:500 13px/1 var(--mono);background:rgba(15,11,8,.7);padding:6px 9px;border-radius:6px}
+.clock.ext{color:var(--amber-hi)}
+.daybadge{position:absolute;top:10px;left:12px;z-index:3;font:500 11px/1 var(--mono);letter-spacing:.12em;background:rgba(15,11,8,.7);padding:7px 9px;border-radius:6px}
+
+/* post / calendar / settle */
+.post{width:min(420px,86%);background:#0F0B08;border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;z-index:2}
+.post .ph{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#000}
+.post .ph div{aspect-ratio:1;position:relative;background:linear-gradient(180deg,#6B5A4A 0 36%,#7D6A57 37%)}
+.post .ph div span{position:absolute;left:8px;top:8px;font:500 10px var(--mono);background:rgba(0,0,0,.5);padding:3px 6px;border-radius:4px}
+.post .ph div::after{content:"";position:absolute;inset:18% 14%;background:repeating-linear-gradient(45deg,rgba(40,30,22,.55) 0 10px,transparent 10px 20px)}
+.post .ph div.after::after{inset:60% 30% 18% 30%;background:rgba(40,30,22,.35)}
+.post .bd{padding:12px 14px}
+.post .bd b{font-size:13px}
+.post .bd p{margin:6px 0 0;font:400 14px/1.6 var(--disp)}
+.post .stars{font:500 12px var(--mono);color:var(--amber-hi);margin-top:6px}
+.cal{position:relative;z-index:2;text-align:center}
+.cal .big{font:700 clamp(40px,7vw,80px)/1 var(--mono);letter-spacing:.04em}
+.cal .big em{font-style:normal;color:var(--mut);margin:0 .3em}
+.cal p{color:var(--mut);margin:14px 0 0;font:400 15px/1.6 var(--disp)}
+.tl{position:relative;z-index:2;width:min(520px,92%);max-height:92%;overflow-y:auto}
+.tl h2{font:700 26px/1.2 var(--disp);margin:0 0 14px}
+.tl .it{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:baseline;padding:9px 0;border-top:1px dashed var(--line);font-size:13px}
+.tl .it em{font:500 11px var(--mono);color:var(--mut);font-style:normal}
+.tl .it small{display:block;color:var(--mut);font:400 12.5px/1.5 var(--disp)}
+.tl .it b{font:500 13px var(--mono)}
+.tone-w{color:var(--warm)}.tone-c{color:#9DB3C9}
+</style>
+</head>
+<body>
+<div class="game">
+  <section class="scene" id="scene" aria-live="polite"></section>
+  <aside class="panel" id="panel"></aside>
+</div>
+<script>
+/* =====================================================================
+   환기 · 1분기 평판 루프 프로토타입
+   규칙의 출처: 환기 콘텐츠 설계 초안 v5 (부록 A·C, 4.4, 7장)
+   수치는 v5의 [가안]을 그대로 쓴다. 바꾸려면 RULE만 고치면 된다.
+   ===================================================================== */
+var RULE={
+  dayStart:540, early:360, normal:540, late:720,           // 09:00 기준 분. 15:00 이전 일찍, 18:00까지 보통, 21:00까지 늦게(연장)
+  nextHP:{early:100,normal:85,late:70},                      // 부록 C.3
+  tired:30,                                                  // 체력 30 미만이면 행동 시간이 2배(효율 저하)
+  // 행동별 소모량은 v5에서 [개발 이월]. 하루에 행동 10번 안팎이 되도록 프로토타입용으로 정함
+  cost:{look:6,tidy:8,throw:6,keep:6,special:15,talk:12},
+  time:{look:40,tidy:60,throw:40,keep:30,special:120,talk:60},
+  mainThr:[0.6,0.7,0.8], subThr:0.5,                        // 메인 완료율 기준(쉬움/기본/엄격), 서브 50% (부록 A.2)
+  subCut:0.3, floor:0.7,                                     // 서브 3점 이하 -30%, 최저 보수 하한 70%
+  specialBonus:0.25, perfectBonus:0.15,
+  workPerRest:5,                                             // 작업일 5일마다 휴무 1일 (부록 C.2)
+  studyCost:40
+};
+var ACT={look:'조사',tidy:'정리',throw:'폐기',keep:'보류',special:'특별 주문'};
+
+/* ---------------- 의뢰 데이터 (문구는 가안) ---------------- */
+var MAINS=[
+ {id:'M1',kind:'main',ch:'1장',title:'이사 전 방 비우기',from:'J · 이사 예정',est:3,pay:300,
+  dm:'안녕하세요. 다음 주에 이사를 가는데 방이 이 상태라서요. 바닥만 보이게 해 주시면 돼요. 책상 위 상자는 건드리지 말아 주세요.',
+  cond:'바닥 공간 확보',special:{id:'shelf',t:'창가 선반 정리'},
+  objs:{
+   bills:{n:'뜯지 않은 고지서',k:'c',a:['look','tidy','throw'],clue:'같은 곳에서 온 고지서가 석 달 치예요. 봉투는 하나도 뜯지 않았어요.'},
+   flyer:{n:'모아 둔 전단지',k:'f',a:['tidy','throw']},
+   boxes:{n:'접지 않은 빈 상자',k:'f',a:['tidy','throw']},
+   clothes:{n:'의자 위 옷 더미',k:'f',a:['tidy','throw']},
+   cups:{n:'창틀의 빈 컵',k:'f',a:['throw']},
+   bag:{n:'풀지 않은 여행 가방',k:'e',a:['look','tidy','keep'],clue:'항공권이 꽂힌 채예요. 날짜는 작년 봄, 쓰이지 않았어요.'},
+   lamp:{n:'고장 난 스탠드',k:'e',a:['look','keep','throw'],clue:'전구는 멀쩡해요. 전선만 갈면 될 것 같은데 그대로 두셨네요.'},
+   trash:{n:'포장 쓰레기',k:'f',a:['throw']},
+   books:{n:'바닥의 책 더미',k:'f',a:['tidy']},
+   cables:{n:'엉킨 충전선',k:'f',a:['tidy','throw']},
+   cal:{n:'넘기지 않은 달력',k:'c',a:['look','throw'],clue:'달력은 3월에 멈춰 있어요. 한 칸에만 동그라미가 있어요.'},
+   sealed:{n:'개봉하지 않은 상자',k:'e',a:['look','throw'],prot:1,clue:'수신인은 의뢰인 본인이에요. 보낸 사람 칸에 가족의 이름이 있어요.'},
+   shelf:{n:'창가 선반',k:'f',a:['special'],sp:1},
+   note:{n:'가방 안쪽 쪽지',k:'c',a:['look','keep'],hidden:1,clue:'“다녀와서 얘기하자.” 끝내 하지 못한 말 같아요.'}
+  },
+  talk:[
+   {q:'미뤄 두신 게 짐만은 아닌 것 같네요.',need:[],ok:0,r:'…청소만 해 주시면 돼요.'},
+   {q:'고지서를 안 뜯으신 건, 열면 뭔가 정해질 것 같아서였나요?',need:['bills'],ok:1,r:'…맞아요. 열면 정말 끝난 게 될까 봐.'},
+   {q:'다 버리지 않아도 돼요. 가져갈 상자 하나만 먼저 정해 볼까요?',need:[],know:1,ok:1,r:'상자 하나라면… 해 볼 수 있을 것 같아요.'},
+   {q:'이 가방을 버리면, 무엇이 사라질까 봐 걱정되세요?',need:['bag','cal'],ok:1,best:1,r:'그날 못 간 여행이요. 그게 없어지면 정말 안 간 게 되니까.'},
+   {q:'가방 안 쪽지, 보내지 못한 말 같았어요. 이번엔 가져가실래요?',need:['note'],ok:1,best:1,r:'…네. 이번엔 가져갈게요. 고마워요.'}
+  ],
+  rev:{none:'적어 둔 대로 해 주셨어요. 바닥이 보이네요.',ok:'이사 가서 상자 하나는 열어 볼게요. 들어 주셔서 고마워요 🙂',best:'못 간 여행 얘기를 처음으로 했어요. 방보다 제가 더 가벼워졌어요 🙂',fail:'…네. 청소는 됐어요.'}},
+ {id:'M2',kind:'main',ch:'1장',title:'룸메이트가 떠난 방',from:'S · 남은 룸메이트',est:2,pay:200,
+  dm:'같이 살던 친구가 급하게 나갔어요. 주말에 다음 사람이 들어와서 이틀 안에 비워야 해요. 친구는 알아서 버려 달래요. 현관 열쇠 꾸러미만 꼭 남겨 주세요.',
+  cond:'친구 방 비우기',special:{id:'tape',t:'벽의 테이프 자국 지우기'},
+  objs:{
+   photos:{n:'벽에 붙은 사진들',k:'c',a:['look','tidy','throw'],clue:'사진마다 두 사람이 있어요. 최근 것일수록 한 사람만 찍혀 있어요.'},
+   mugs:{n:'짝 맞는 머그 두 개',k:'e',a:['look','keep','throw'],clue:'하나는 이가 나갔어요. 그래도 같이 씻어 둔 흔적이 있어요.'},
+   left:{n:'두고 간 옷',k:'f',a:['tidy','throw']},
+   herb:{n:'말라 가는 허브 화분',k:'e',a:['look','keep','throw'],clue:'물 주기 표가 붙어 있어요. 마지막 칸에 의뢰인의 이름이 있어요.'},
+   bedding:{n:'벗겨 둔 침구',k:'f',a:['tidy','throw']},
+   fridge:{n:'냉장고 메모',k:'c',a:['look','throw'],clue:'“먼저 자, 늦어.” 같은 글씨로 몇 장이나 있어요.'},
+   shoes:{n:'현관의 신발',k:'f',a:['tidy','throw']},
+   trash:{n:'분리 안 한 쓰레기',k:'f',a:['throw']},
+   desk:{n:'빈 책상 위 잡동사니',k:'f',a:['tidy','throw']},
+   keys:{n:'열쇠 꾸러미',k:'c',a:['look','throw'],prot:1,clue:'열쇠가 세 개예요. 하나는 이 집 것이 아니에요.'},
+   tape:{n:'벽의 테이프 자국',k:'f',a:['special'],sp:1},
+   env:{n:'침대 밑 봉투',k:'e',a:['look','keep','throw'],hidden:1,clue:'의뢰인 앞으로 쓴 봉투예요. 열려 있지 않아요.'}
+  },
+  talk:[
+   {q:'친구분이 좀 무책임하셨네요.',need:[],ok:0,r:'…그런 말 들으려고 부른 건 아니에요.'},
+   {q:'사진이 점점 한 사람만 남더라고요. 그동안 혼자 버티셨겠어요.',need:['photos'],ok:1,r:'…그렇게 보였어요? 저만 그런 줄 알았는데.'},
+   {q:'“알아서 버려 달라”는 말이, 정말 다 버리라는 뜻이었을까요?',need:[],know:1,ok:1,r:'…아닐지도요. 저한테 고르라는 거였나 봐요.'},
+   {q:'화분 물 주기 표의 마지막 이름이 의뢰인 분이던데요. 화분은 어떻게 할까요?',need:['herb','mugs'],ok:1,best:1,r:'제가 가져갈게요. 마지막까지 제가 줬으니까.'},
+   {q:'침대 밑에 의뢰인 앞으로 된 봉투가 있었어요. 버리지 않고 따로 둘게요.',need:['env'],ok:1,best:1,r:'…버리라고 했으면서. 고마워요, 둬 주세요.'}
+  ],
+  rev:{none:'시간 맞춰 비워 주셨어요.',ok:'이상하게 마음이 좀 놓였어요. 친절하게 해 주셔서 감사해요 ☺',best:'화분은 제 창가로 왔어요. 버리는 날인 줄 알았는데 고르는 날이었네요 🌿',fail:'……빨리 끝나서 다행이에요.'}}
+];
+var SUBS=[
+ {id:'S1',title:'파티 다음 날 거실',from:'R',est:1,pay:90,dm:'어제 집들이를 했는데… 오늘 저녁에 부모님이 오세요. 빌려 온 스피커는 그대로 둬 주세요!',
+  cond:'거실 원상 복구',special:{id:'carpet',t:'카펫 얼룩 지우기'},
+  objs:{cans:{n:'빈 캔',k:'f',a:['throw']},bottles:{n:'빈 병',k:'f',a:['throw']},cush:{n:'흩어진 쿠션',k:'f',a:['tidy']},snack:{n:'과자 봉지',k:'f',a:['throw']},
+   cups:{n:'일회용 컵',k:'f',a:['throw']},card:{n:'롤링페이퍼',k:'c',a:['look','tidy','throw'],clue:'“새집에서는 덜 외롭기를.” 친구들 글씨예요.'},
+   spk:{n:'빌려 온 스피커',k:'f',a:['throw'],prot:1},carpet:{n:'카펫 얼룩',k:'f',a:['special'],sp:1}}},
+ {id:'S2',title:'기름때 낀 원룸 주방',from:'H',est:1,pay:110,dm:'요리를 끊은 지 오래라 주방이 엉망이에요. 무쇠 팬은 할머니가 주신 거라 꼭 남겨 주세요.',
+  cond:'조리대 사용 가능하게',special:{id:'hood',t:'후드 닦기'},
+  objs:{dish:{n:'쌓인 그릇',k:'f',a:['tidy']},spice:{n:'굳은 양념통',k:'f',a:['throw']},bag2:{n:'배달 용기',k:'f',a:['throw']},
+   towel:{n:'눅눅한 행주',k:'f',a:['throw']},recipe:{n:'붙여 둔 레시피',k:'c',a:['look','tidy','throw'],clue:'손글씨 레시피예요. 끝에 “2인분”이라고 적혀 있어요.'},
+   pan:{n:'무쇠 팬',k:'e',a:['tidy','throw'],prot:1},hood:{n:'후드',k:'f',a:['special'],sp:1}},
+  talk:[{q:'레시피가 2인분이더라고요. 다시 해 드실 때 쓰시게 잘 붙여 둘게요.',need:['recipe'],ok:1,r:'…그럼 이번 주말엔 한번 해 볼까요.'}]},
+ {id:'S3',title:'창고가 된 베란다',from:'P',est:2,pay:140,dm:'베란다를 창고처럼 쓰다 보니 문이 안 열려요. 이틀 정도면 될까요?',
+  cond:'베란다 문 열리게',special:{id:'drain',t:'배수구 청소'},
+  objs:{p1:{n:'빈 화분 무더기',k:'f',a:['tidy','throw']},p2:{n:'낡은 자전거',k:'e',a:['look','keep','throw'],clue:'아이용 보조 바퀴가 달려 있어요.'},p3:{n:'철 지난 이불',k:'f',a:['tidy','throw']},
+   p4:{n:'페인트 통',k:'f',a:['throw']},p5:{n:'박스 더미',k:'f',a:['tidy','throw']},p6:{n:'고장 난 선풍기',k:'f',a:['throw']},
+   p7:{n:'캠핑 의자',k:'f',a:['tidy']},p8:{n:'공구함',k:'f',a:['tidy'],prot:1},drain:{n:'배수구',k:'f',a:['special'],sp:1}}},
+ {id:'S4',title:'시험 끝난 자취방',from:'K',est:1,pay:70,low:1,dm:'시험 기간 끝나서 방 좀… 학생이라 많이는 못 드려요ㅠ',
+  cond:'책상과 바닥 정리',special:{id:'win',t:'창문 닦기'},
+  objs:{a1:{n:'프린트 더미',k:'f',a:['tidy','throw']},a2:{n:'에너지 음료 캔',k:'f',a:['throw']},a3:{n:'컵라면 용기',k:'f',a:['throw']},
+   a4:{n:'빨래 더미',k:'f',a:['tidy']},a5:{n:'포스트잇 벽',k:'c',a:['look','throw'],clue:'맨 아래 한 장만 공부 얘기가 아니에요. “집에 전화하기.”'},win:{n:'창문',k:'f',a:['special'],sp:1}}},
+ {id:'S5',title:'택배 상자 산',from:'T',est:1,pay:60,low:1,dm:'상자만 좀 치워 주세요. 다른 건 손대지 마시고요.',
+  cond:'상자 처리',special:{id:'floor',t:'바닥 닦기'},
+  objs:{b1:{n:'큰 상자',k:'f',a:['throw']},b2:{n:'작은 상자',k:'f',a:['throw']},b3:{n:'완충재',k:'f',a:['throw']},b4:{n:'테이프 뭉치',k:'f',a:['throw']},
+   b5:{n:'뜯지 않은 상자',k:'e',a:['look','tidy'],prot:1,clue:'반품 기한이 지난 송장이 붙어 있어요.'},floor:{n:'바닥',k:'f',a:['special'],sp:1}}},
+ {id:'S6',title:'작업실 겸 원룸',from:'L',est:2,pay:130,dm:'그림 그리는 사람이에요. 마감 끝나고 정신을 차려 보니… 캔버스는 버리지 말아 주세요.',
+  cond:'작업대와 바닥 확보',special:{id:'sink',t:'물감 묻은 개수대'},
+  objs:{c1:{n:'말라붙은 팔레트',k:'f',a:['tidy','throw']},c2:{n:'붓 통',k:'f',a:['tidy']},c3:{n:'구겨진 스케치',k:'c',a:['look','throw'],clue:'같은 얼굴을 몇 번이나 그리다 말았어요.'},
+   c4:{n:'옷 더미',k:'f',a:['tidy','throw']},c5:{n:'포장재',k:'f',a:['throw']},c6:{n:'빈 물통',k:'f',a:['throw']},c7:{n:'캔버스 묶음',k:'e',a:['tidy','throw'],prot:1},sink:{n:'개수대',k:'f',a:['special'],sp:1}},
+  talk:[{q:'스케치는 버리지 않고 한쪽에 모아 둘까요? 같은 얼굴이 많더라고요.',need:['c3'],ok:1,r:'…네. 아직 못 끝낸 거라서요.'}]}
+];
+SUBS.forEach(function(s){s.kind='sub';s.rev={none:'깔끔해요. 감사합니다.',ok:'말도 걸어 주시고 좋았어요 😊',fail:'…네, 감사해요.'}});
+
+/* ---------------- 상태 ---------------- */
+var G,C,UI={logOpen:false,sel:null,dmSel:null};
+function newGame(q){
+  G={phase:'inbox',qdays:q,day:1,money:0,hp:100,know:0,work:0,mlv:1,mainR:[],subR:[],lastSub:null,
+     done:[],receipts:[],reviews:[],log:[],att:{look:0,throw:0,keep:0,talk:0,ok:0,fail:0},inbox:[],subSeq:0};
+  MAINS.forEach(function(m){G.inbox.push({tpl:m,uid:m.id})});
+  addSubs(2,true);
+  rlog('<b>1분기 시작.</b> 1장 메인 2건과 서브 2건이 DM으로 도착했어요.');
+}
+function rlog(t){G.log.unshift('D'+G.day+' · '+t)}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function avg(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:null}
+function f1(n){return n===null?'–':n.toFixed(1)}
+function money(n){return '$'+Math.round(n)}
+function clock(m){var t=RULE.dayStart+m;return pad(Math.floor(t/60))+':'+pad(t%60)}
+function pad(n){return (n<10?'0':'')+n}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* 서브 DM 도착: 낮은 평점이면 보수가 낮은 서브가 더 자주 온다 (부록 A.2) */
+function addSubs(n,silent){
+  var lowRep=(G.lastSub!==null&&G.lastSub<=3)||(avg(G.subR)!==null&&avg(G.subR)<3.5);
+  for(var i=0;i<n;i++){
+    var inbox=G.inbox.map(function(x){return x.tpl.id});
+    var pool=SUBS.filter(function(s){return inbox.indexOf(s.id)<0});
+    if(!pool.length)return;
+    var low=pool.filter(function(s){return s.low}),high=pool.filter(function(s){return !s.low});
+    var useLow=lowRep?Math.random()<0.65:Math.random()<0.25;
+    var src=(useLow&&low.length)?low:(high.length?high:low);
+    var s=pick(src);G.subSeq++;
+    G.inbox.push({tpl:s,uid:s.id+'-'+G.subSeq});
+    if(!silent)rlog('서브 DM 도착: '+s.title+' ('+money(s.pay)+')'+(lowRep&&s.low?' · 최근 서브 평점이 낮아 보수가 낮은 의뢰가 더 자주 와요':''));
+  }
+}
+
+/* ---------------- 의뢰 진행 ---------------- */
+function startJob(item){
+  var t=item.tpl,ids=Object.keys(t.objs);
+  C={item:item,t:t,day:1,min:0,ext:null,st:{},clues:{},talk:0,talkLine:'',special:false,protGone:0,hiddenOn:false,
+     tint:0,shownTint:0,msg:'',days:0,start:G.day,thr:t.kind==='main'?RULE.mainThr[G.mlv]:RULE.subThr,lv:G.mlv,actions:0,looks:0};
+  C.req=ids.filter(function(k){var o=t.objs[k];return !o.prot&&!o.sp&&!o.hidden});
+  C.pos=layout(ids);
+  G.phase='work';UI.sel=null;
+  C.msg=t.kind==='main'&&G.mlv===2?'의뢰인이 조금 경계하는 눈치예요. 평점이 낮을수록 메인 의뢰의 기준이 빡빡해지고 대화가 어려워져요.':'방에 들어왔어요. 견적서의 조건부터 확인해요.';
+}
+function layout(ids){
+  var p={},slots=[],cols=4,rows=4;
+  for(var r=0;r<rows;r++)for(var c=0;c<cols;c++)slots.push([14+c*24+(r%2?6:0),46+r*14.5]);
+  var seed=ids.length;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}
+  var normal=ids.filter(function(k){return !C.t.objs[k].sp});
+  normal.forEach(function(k,i){var s=slots[i%slots.length];p[k]=[s[0]+(rnd()-.5)*5,s[1]+(rnd()-.5)*3]});
+  ids.filter(function(k){return C.t.objs[k].sp}).forEach(function(k){p[k]=[19,30]});
+  return p;
+}
+function handled(){var n=0;C.req.forEach(function(k){if(C.st[k])n++});return n}
+function comp(){return handled()/C.req.length}
+function nClues(){return Object.keys(C.clues).length}
+function canAct(kind,id){
+  if(C.ext==='work'&&(kind==='look'||kind==='talk'))return '연장분은 작업에만 쓰기로 했어요.';
+  if(C.ext==='look'&&kind!=='look'&&kind!=='talk')return '연장분은 조사·상담에만 쓰기로 했어요.';
+  if(G.hp<RULE.cost[kind])return '체력이 모자라요. 오늘은 마무리해요.';
+  var lim=C.ext?RULE.late:RULE.normal;
+  if(C.min>=lim)return '오늘 일할 수 있는 시간이 끝났어요.';
+  return '';
+}
+function spend(kind){
+  G.hp=Math.max(0,G.hp-RULE.cost[kind]);
+  C.min+=RULE.time[kind]*(G.hp<RULE.tired?2:1);C.actions++;
+}
+function doAct(kind,id){
+  var why=canAct(kind,id);if(why){C.msg=why;return}
+  var o=C.t.objs[id],tired=G.hp<RULE.tired;
+  spend(kind);
+  if(kind==='look'){
+    G.att.look++;C.looks++;
+    if(tired){C.msg='지쳐서 눈에 잘 안 들어와요. 무리하면 효율이 떨어져요.';}
+    else if(o.clue){C.clues[id]=o.clue;C.msg='단서 · '+o.clue}
+    else C.msg=o.n+'. 특별한 건 없어 보여요.';
+  }else if(kind==='special'){C.special=true;C.st[id]='moved';C.msg=C.t.special.t+'을(를) 끝냈어요. 특별 청소 주문 완료.'}
+  else{
+    C.st[id]=kind==='tidy'?'moved':(kind==='throw'?'gone':'kept');
+    if(kind==='throw')G.att.throw++;if(kind==='keep')G.att.keep++;
+    if(kind==='throw'&&o.prot){C.protGone++;C.msg='보호 물건을 버렸어요. 진행은 되지만 평점 상한이 생겨요.'}
+    else C.msg=o.n+' · '+ACT[kind]+(tired?' (지쳐서 시간이 두 배로 걸렸어요)':'');
+  }
+  UI.sel=null;afterAct();
+}
+function afterAct(){
+  if(!C.ext&&C.min>=RULE.normal){G.phase='wrapq';return}
+  if(C.ext&&C.min>=RULE.late){endDay();return}
+}
+function talkOptions(){
+  var hard=C.t.kind==='main'&&C.lv===2,n=nClues();
+  return (C.t.talk||[]).map(function(x,i){
+    var okNeed=x.need.every(function(k){return C.clues[k]});
+    if(x.know&&G.know<1)okNeed=false;
+    if(hard&&x.ok&&x.need.length&&n<x.need.length+1)okNeed=false;   // 낮은 평점: 의뢰인이 더 방어적
+    return {i:i,x:x,show:okNeed};
+  }).filter(function(o){return o.show});
+}
+function doTalk(i){
+  var why=canAct('talk');if(why){C.msg=why;G.phase='work';return}
+  spend('talk');G.att.talk++;
+  var x=C.t.talk[i];
+  C.talk=x.ok?(x.best?3:1):2;C.talkLine=x.r;
+  if(x.ok)G.att.ok++;else G.att.fail++;
+  C.tint=x.ok?1:-1;
+  C.msg='의뢰인 · “'+x.r+'”';
+  G.phase='work';afterAct();
+}
+function endDay(){
+  var type=C.min<=RULE.early?'early':(C.min<=RULE.normal?'normal':'late');
+  C.endType=type;C.days++;G.day++;G.work++;
+  G.hp=RULE.nextHP[type];
+  C.shownTint=C.tint;   // 상담 결과의 색은 하루 마무리 때 한 번에 확정 (부록 E.3)
+  G.phase='dayend';
+}
+function nextDay(){C.day++;C.min=0;C.ext=null;C.hiddenOn=C.hiddenOn;C.msg='';G.phase='work'}
+function finishJob(){
+  var t=C.t,c=comp(),thr=C.thr,r;
+  r=c>=thr?(C.special?5:4):(c>=thr-0.25?3:2);
+  if(C.protGone===1)r=Math.min(r,4);if(C.protGone>=2)r=Math.min(r,3);
+  var perfect=c===1&&C.special&&C.protGone===0;
+  var base=t.pay,rows=[['기본 청소비',base,'']];
+  var corr=0;
+  if(t.kind==='sub'&&r<=3){corr=-Math.round(base*RULE.subCut);corr=Math.max(corr,-Math.round(base*(1-RULE.floor)));rows.push(['평판 보정 (서브 3점 이하)',corr,'minus'])}
+  if(C.special)rows.push(['특별 청소 주문 수당',Math.round(base*RULE.specialBonus),'']);
+  if(perfect)rows.push(['완벽한 청소 수당',Math.round(base*RULE.perfectBonus),'']);
+  var tip=0;
+  if(C.talk===1||C.talk===3)tip=t.kind==='main'?30+10*Math.min(nClues(),4)+(C.talk===3?20:0):15;
+  if(tip)rows.push(['팁',tip,'']);
+  var sum=rows.reduce(function(a,b){return a+b[1]},0);
+  G.money+=sum;
+  var tone=C.talk===0?'none':(C.talk===2?'fail':(C.talk===3&&t.rev.best?'best':'ok'));
+  var review=t.rev[tone];
+  var before={main:G.mlv,mavg:avg(G.mainR)};
+  if(t.kind==='main'){G.mainR.push(r);updateLevel(before)}
+  else{G.subR.push(r);G.lastSub=r;rlog('서브 평점 <b>'+r+'</b> → '+(r<=3?'이번 의뢰 기본 청소비 −30%, 보수가 낮은 서브가 더 자주 와요.':'감액 없음.'))}
+  var rc={t:t,rate:r,comp:c,thr:thr,rows:rows,sum:sum,perfect:perfect,prot:C.protGone,tone:tone,review:review,start:C.start,days:C.days,est:t.est,clues:nClues(),lv:C.lv};
+  G.receipts.push(rc);G.reviews.push({tone:tone,kind:t.kind});
+  G.done.push(t.id);
+  G.inbox=G.inbox.filter(function(x){return x!==C.item});
+  G.cur=rc;G.phase='receipt';
+}
+/* 메인 난이도: 메인 평점 이동평균(최근 3개월 = 이 분기 전체) → 한 단계씩만 이동 (부록 A.2) */
+function updateLevel(before){
+  var a=avg(G.mainR),target=a>=4.5?0:(a<3.5?2:1),old=G.mlv;
+  if(target>old)G.mlv=old+1;else if(target<old)G.mlv=old-1;
+  var name=['쉬움 · 완료율 60%','기본 · 70%','엄격 · 80%'];
+  rlog('메인 평점 '+G.mainR[G.mainR.length-1]+' → 이동평균 <b>'+f1(before.mavg)+' → '+f1(a)+'</b>. 다음 메인 기준: <b>'+name[G.mlv]+'</b>'+(G.mlv!==old?' (한 단계 이동)':(target!==old?'':' (유지)')));
+}
+function afterReceipt(){
+  var rest=Math.floor(G.work/RULE.workPerRest);
+  if(rest>0){G.restDays=rest;G.work=G.work%RULE.workPerRest;G.phase='rest';G.restWhy='작업일 '+RULE.workPerRest+'일마다 휴무 1일';return}
+  toGap();
+}
+function doRest(study){
+  if(study&&G.money>=RULE.studyCost){G.money-=RULE.studyCost;G.know++;rlog('휴무 중 공부: 지식 <b>'+G.know+'</b> (−'+money(RULE.studyCost)+'). 상담에서 새 질문이 열려요.')}
+  G.day+=G.restDays;G.hp=100;
+  rlog('휴무 '+G.restDays+'일 · 체력 100으로 회복');
+  if(G.vol){G.vol=false;G.phase='inbox';checkEnd();return}
+  toGap();
+}
+function toGap(){
+  var g=G.qdays<60?1+Math.floor(Math.random()*2):2+Math.floor(Math.random()*3);
+  G.gap={from:G.day,to:G.day+g};G.day+=g;
+  var n=1+(Math.random()<.5?1:0);G.gapSubs=n;addSubs(n);
+  G.phase='gap';
+}
+function volRest(){G.vol=true;G.restDays=1;G.work=0;G.restWhy='자발적 휴무 · 달력 하루, 작업일 카운트 초기화';G.phase='rest'}
+function checkEnd(){if(G.day>G.qdays){G.phase='settle';rlog('<b>1분기 종료.</b> 남은 서브 DM은 사라졌어요.')}}
+
+/* ---------------- 렌더 ---------------- */
+var $=function(s){return document.querySelector(s)};
+function render(){renderScene();renderPanel()}
+function dash(){
+  var days=G.qdays,dleft=Math.max(0,days-G.day+1);
+  var mavg=avg(G.mainR),savg=avg(G.subR),lvN=['쉬움','기본','엄격'][G.mlv];
+  var h='<div class="dash"><div><span>DAY</span><b>'+Math.min(G.day,days)+'<small style="color:var(--mut);font-size:11px"> /'+days+'</small></b></div>'
+   +'<div><span>MONEY</span><b>'+money(G.money)+'</b></div>'
+   +'<div><span>체력</span><b class="'+(G.hp<RULE.tired?'low':'')+'">'+G.hp+'</b></div>'
+   +'<div><span>지식</span><b>'+G.know+'</b></div></div>';
+  h+='<div class="rep"><h4>평판</h4>'
+   +'<div class="r"><span>메인 평점 이동평균</span><b>'+f1(mavg)+' <small style="color:var(--mut)">('+G.mainR.length+'건)</small></b></div>'
+   +'<div class="r"><span>다음 메인 기준</span><b>'+lvN+' · 완료율 '+Math.round(RULE.mainThr[G.mlv]*100)+'%<span class="lv"><i class="'+(G.mlv>=0?'on':'')+'"></i><i class="'+(G.mlv>=1?'on':'')+'"></i><i class="'+(G.mlv>=2?'on':'')+'"></i></span></b></div>'
+   +'<div class="r"><span>서브 평점 평균 · 최근</span><b>'+f1(savg)+' · '+(G.lastSub===null?'–':G.lastSub)+'</b></div>'
+   +'<div class="r"><span>후기 분위기</span><b>'+toneCount()+'</b></div>'
+   +'<button class="logbtn" data-a="log">'+(UI.logOpen?'▾':'▸')+' 규칙 로그 · 평판이 왜 바뀌었나 ('+G.log.length+')</button>'
+   +(UI.logOpen?'<ul class="rlog">'+G.log.map(function(l){return '<li>'+l+'</li>'}).join('')+'</ul>':'')
+   +'</div>';
+  return h;
+}
+function toneCount(){
+  var c={none:0,warm:0,fail:0};G.reviews.forEach(function(r){if(r.tone==='none')c.none++;else if(r.tone==='fail')c.fail++;else c.warm++});
+  return '사무적 '+c.none+' · <span class="tone-w">따뜻함 '+c.warm+'</span> · <span class="tone-c">어색함 '+c.fail+'</span>';
+}
+function estimate(t,full){
+  var prot=Object.keys(t.objs).filter(function(k){return t.objs[k].prot}).map(function(k){return t.objs[k].n});
+  var thr=t.kind==='main'?RULE.mainThr[G.mlv]:RULE.subThr;
+  var h='<div class="paper"><h5>견적서<span>'+t.id+'</span></h5>'
+   +'<div class="row"><span>구분</span><b>'+(t.kind==='main'?t.ch+' · 메인':'서브 · 외전')+'</b></div>'
+   +'<div class="row"><span>의뢰 조건</span><b>'+t.cond+'<br><small>완료율 '+Math.round(thr*100)+'% 이상</small></b></div>'
+   +'<div class="row"><span>특별 청소 주문</span><b>'+t.special.t+'</b></div>'
+   +'<div class="row"><span>보호 물건</span><b>'+(prot.length?prot.join(', ')+'<br><small>건드리지 말 것</small>':'없음')+'</b></div>'
+   +'<div class="row"><span>예상 소요일</span><b>'+t.est+'일</b></div>'
+   +'<div class="row"><span>예상 보수</span><b>'+money(t.pay)+' · 기본 클리어 보상</b></div>';
+  if(full&&t.kind==='sub'&&G.lastSub!==null&&G.lastSub<=3)h+='<p class="note">최근 서브 평점이 낮아요. 이번에도 3점 이하면 기본 청소비가 30% 깎여요.</p>';
+  if(full&&t.kind==='main'&&G.mlv===2)h+='<p class="note">메인 평점 이동평균이 낮아 기준이 빡빡해졌어요(80%).</p>';
+  if(full&&t.kind==='main'&&G.mlv===0)h+='<p class="note">메인 평점이 좋아 기준이 한 단계 느슨해졌어요(60%).</p>';
+  return h+'</div>';
+}
+
+function renderScene(){
+  var s=$('#scene'),h='';
+  if(G===undefined||G.phase==='title'){
+    h='<div class="ttl"><h1>환기</h1><p>1분기 평판 루프 프로토타입<br><small style="font-size:12px">프롤로그 다음, 1장이 도착하는 분기</small></p></div>';
+  }else if(G.phase==='inbox'||G.phase==='est'){
+    var items=G.inbox.slice().sort(function(a,b){return (a.tpl.kind==='main'?0:1)-(b.tpl.kind==='main'?0:1)});
+    h='<div class="phone"><div class="bar"><span>D'+G.day+'</span><span>DM</span></div><h3>메시지</h3><div class="thread">';
+    if(!items.length)h+='<p class="empty">새 메시지가 없어요.<br>하루 쉬면서 기다려 봐요.</p>';
+    items.forEach(function(x){var t=x.tpl;
+      h+='<button class="th'+(UI.dmSel===x.uid?' on':'')+'" data-a="dm" data-u="'+x.uid+'"><b>'+esc(t.from)+'<em>'+(t.kind==='main'?t.ch+' 메인':'서브')+'</em></b><span>'+esc(t.dm)+'</span></button>'});
+    var sel=G.inbox.filter(function(x){return x.uid===UI.dmSel})[0];
+    if(sel)h+='<div class="bubble">'+esc(sel.tpl.dm)+'</div>';
+    h+='</div></div>';
+  }else if(G.phase==='work'||G.phase==='wrapq'||G.phase==='talk'||G.phase==='dayend'){
+    var p=comp(),bright=.42+.58*p;
+    var sat=C.shownTint===0?0:.55;
+    var filt='grayscale('+(1-sat)+') brightness('+bright.toFixed(2)+')'+(C.shownTint<0?' hue-rotate(-12deg)':'');
+    var tint=C.shownTint>0?'rgba(224,150,110,.55)':(C.shownTint<0?'rgba(70,105,140,.7)':'transparent');
+    h='<div class="roomwrap"><div class="daybadge">'+esc(C.t.title)+' · '+C.day+'일차 / 예상 '+C.t.est+'일</div><div class="clock'+(C.ext?' ext':'')+'">'+clock(C.min)+(C.ext?' · 연장':'')+'</div>'
+     +'<div class="room" style="filter:'+filt+'"><div class="win"></div><div class="wall2"></div><div class="floorline"></div>';
+    Object.keys(C.t.objs).forEach(function(k){
+      var o=C.t.objs[k],st=C.st[k];
+      if(o.hidden&&!C.hiddenOn)return;
+      var pos=C.pos[k],cls='ob k-'+o.k+(o.prot?' prot':'')+(o.sp?' sp':'')+(st?' '+st:'')+(UI.sel===k?' sel':'')+(o.hidden&&C.justFound===k?' new':'');
+      var badge=o.prot?'보호':(o.sp?'특별 주문':(C.clues[k]?'단서':''));
+      h+='<button class="'+cls+'" style="left:'+pos[0]+'%;top:'+pos[1]+'%" data-a="sel" data-k="'+k+'">'+esc(o.n)+(badge?'<i>'+badge+'</i>':'')+'</button>';
+    });
+    h+='</div><div class="tint" style="background:'+tint+'"></div></div>';
+  }else if(G.phase==='receipt'){
+    var rc=G.cur;
+    h='<div class="post"><div class="ph"><div><span>BEFORE</span></div><div class="after"><span>AFTER</span></div></div><div class="bd"><b>'+esc(rc.t.from)+'</b> 님의 후기'
+     +'<p class="'+(rc.tone==='fail'?'tone-c':(rc.tone==='none'?'':'tone-w'))+'">'+esc(rc.review)+'</p><div class="stars">평점 '+rc.rate+' / 5'+(rc.perfect?' · 완벽한 청소':'')+'</div></div></div>';
+  }else if(G.phase==='rest'){
+    h='<div class="cal"><div class="lab">REST</div><div class="big">D'+G.day+'<em>→</em>D'+(G.day+G.restDays)+'</div><p>휴무 '+G.restDays+'일. 주인공도 사람이에요.<br><small>'+G.restWhy+'</small></p></div>';
+  }else if(G.phase==='gap'){
+    h='<div class="cal"><div class="lab">CALENDAR</div><div class="big">D'+G.gap.from+'<em>→</em>D'+G.gap.to+'</div><p>다음 DM을 기다리는 동안 달력이 넘어가요.<br><small>새 서브 DM '+G.gapSubs+'건</small></p></div>';
+  }else if(G.phase==='settle'){
+    h='<div class="tl"><div class="lab">1분기 결산 · 영수증 '+G.receipts.length+'장</div><h2>한 분기 동안 정리한 방들</h2>';
+    if(!G.receipts.length)h+='<p class="hint">이번 분기에는 의뢰를 하나도 마치지 않았어요.</p>';
+    G.receipts.forEach(function(r){
+      h+='<div class="it"><em>D'+r.start+'</em><div>'+esc(r.t.title)+' <span class="tag'+(r.t.kind==='main'?' main':'')+'">'+(r.t.kind==='main'?'메인':'서브')+'</span><small class="'+(r.tone==='fail'?'tone-c':(r.tone==='none'?'':'tone-w'))+'">“'+esc(r.review)+'”</small></div><b>'+r.rate+'점 · '+money(r.sum)+'</b></div>'});
+    h+='</div>';
+  }
+  s.innerHTML=h;C&&(C.justFound=null);
+}
+
+function renderPanel(){
+  var h='',p=G?G.phase:'title';
+  if(p==='title'){
+    h='<span class="lab">PROTOTYPE</span>'
+     +'<div class="msg">프롤로그 끝에 도착한 견적서(EST-001)에서 이어지는 <b>1분기</b>예요. 의뢰 하나를 수행하는 과정은 체험판에서 보여 주고, 여기서는 <b>여러 의뢰가 쌓이며 평판이 다음 의뢰를 바꾸는지</b>를 확인해요.</div>'
+     +'<div class="rep"><h4>이 프로토타입에서 확인하는 것</h4>'
+     +'<div class="r"><span>하루</span><b>시각·체력, 일찍/보통/늦게 마무리</b></div>'
+     +'<div class="r"><span>의뢰</span><b>완료율·특별 주문·보호 물건 → 평점</b></div>'
+     +'<div class="r"><span>평판</span><b>서브 감액, 메인 기준 이동, 후기 세 갈래</b></div>'
+     +'<div class="r"><span>분기</span><b>휴무·DM 도착·결산</b></div></div>'
+     +'<div class="stack"><button class="d go" data-a="new" data-q="90">1분기 시작<small>90일 · 기획서 기준</small></button>'
+     +'<button class="d" data-a="new" data-q="45">짧게 해 보기<small>45일 · 10분 안팎으로 결산까지</small></button></div>'
+     +'<p class="hint">수치는 설계 초안 v5의 가안을 그대로 썼어요. 의뢰 문구는 가안이에요.</p>';
+  }else if(p==='inbox'){
+    h=dash();
+    var sel=G.inbox.filter(function(x){return x.uid===UI.dmSel})[0];
+    if(sel){h+=estimate(sel.tpl,true)+'<div class="row2"><button class="d go" data-a="accept">수락한다</button><button class="d" data-a="decline"'+(sel.tpl.kind==='main'?' disabled title="메인은 분기 안에 언제든 할 수 있어요"':'')+'>거절한다</button></div>'}
+    else h+='<p class="hint">왼쪽 DM에서 의뢰를 골라요. 메인은 분기 안에 언제든, 서브는 분기가 바뀌면 사라져요.</p>';
+    h+='<button class="d" data-a="volrest">하루 쉬기<small>체력 100 회복 · 달력 하루와 작업일 카운트('+G.work+'/'+RULE.workPerRest+') 초기화</small></button>';
+    if(G.hp<100)h+='<p class="hint">지금 체력 '+G.hp+'으로 다음 의뢰를 시작해요.</p>';
+  }else if(p==='work'){
+    h=dash()+workPanel();
+  }else if(p==='talk'){
+    h=dash()+'<span class="lab">상담 · 의뢰인</span><div class="stack">';
+    talkOptions().forEach(function(o){
+      var x=o.x;h+='<button class="d" data-a="say" data-i="'+o.i+'">'+esc(x.q)+'<small>'+(x.need.length?'근거: '+x.need.map(function(k){return C.t.objs[k].n}).join(' · '):(x.know?'지식 1 · 질문의 결이 바뀌어요':'근거 없음'))+'</small></button>'});
+    h+='<button class="d" data-a="back">말을 아끼고 청소로 돌아간다<small>감점 없음 · 팁과 후기의 온기만 열리지 않아요</small></button></div>'
+     +'<p class="hint">대화 결과의 색은 하루를 마무리할 때 방에 한 번에 반영돼요.'+(C.t.kind==='main'&&C.lv===2?' 지금은 평점이 낮아 근거가 하나 더 있어야 말이 닿아요.':'')+'</p>';
+  }else if(p==='wrapq'){
+    h=dash()+'<div class="paper"><h5>18:00<span>EVENING</span></h5><p style="margin:0 0 4px">창밖이 저녁빛이에요. 오늘은 여기까지 할까요?</p>'
+     +'<p class="note">연장하면 21:00까지 일할 수 있고 내일 체력은 70이 돼요. 연장분은 한 가지 용도에만 써요.</p></div>'
+     +'<div class="stack"><button class="d" data-a="endday">보통으로 마무리<small>내일 체력 85</small></button>'
+     +'<button class="d warn" data-a="ext" data-x="work">늦게까지 · 작업에 쓴다<small>같은 품질을 더 적은 일수로</small></button>'
+     +'<button class="d warn" data-a="ext" data-x="look"'+((C.t.talk&&C.t.talk.length)||hasHidden()?'':' disabled')+'>늦게까지 · 조사·상담에 쓴다<small>'+(hasHidden()&&!C.hiddenOn?'아직 못 본 곳이 있을지도 몰라요':'단서를 더 찾거나 이야기를 나눠요')+'</small></button></div>';
+  }else if(p==='dayend'){
+    var et={early:'일찍',normal:'보통',late:'늦게'}[C.endType];
+    var last=C.day>=C.t.est+1;
+    h=dash()+'<div class="paper"><h5>하루의 끝<span>DAY '+C.day+'</span></h5>'
+     +'<div class="row"><span>마무리</span><b>'+et+' ('+clock(C.min)+')</b></div>'
+     +'<div class="row"><span>정리한 것</span><b>'+handled()+' / '+C.req.length+' · 완료율 '+Math.round(comp()*100)+'%</b></div>'
+     +'<div class="row"><span>기준</span><b>'+Math.round(C.thr*100)+'%</b></div>'
+     +'<div class="row"><span>특별 청소 주문</span><b>'+(C.special?'완료':'아직')+'</b></div>'
+     +'<div class="row"><span>찾은 단서</span><b>'+nClues()+'</b></div>'
+     +'<div class="row"><span>내일 시작 체력</span><b>'+G.hp+'</b></div>'
+     +(C.shownTint>0?'<p class="note" style="color:#A8492A">방에 따뜻한 기운이 돌아요.</p>':(C.shownTint<0?'<p class="note" style="color:#4E6E8E">방이 조금 차갑게 가라앉았어요.</p>':''))
+     +'</div><div class="stack">'
+     +(last?'':'<button class="d" data-a="nextday">다음 날 계속<small>'+(C.day+1)+'일차'+(C.day+1>C.t.est?' · 예상 소요일을 넘겨요':'')+'</small></button>')
+     +'<button class="d go" data-a="finish">작업 완료를 알린다<small>영수증과 후기를 받아요</small></button></div>'
+     +(last?'<p class="hint">예상 소요일을 하루 넘겼어요. 오늘로 마무리해요.</p>':'');
+  }else if(p==='receipt'){
+    var rc=G.cur;
+    h=dash()+'<div class="paper"><h5>영수증<span>'+rc.t.id+'</span></h5>';
+    rc.rows.forEach(function(r){h+='<div class="row'+(r[2]?' '+r[2]:'')+'"><span>'+r[0]+'</span><b>'+(r[1]<0?'−'+money(-r[1]):money(r[1]))+'</b></div>'});
+    if(rc.prot)h+='<div class="row minus"><span>보호 물건 폐기 '+rc.prot+'개</span><b>평점 상한 '+(rc.prot>=2?3:4)+'점</b></div>';
+    h+='<div class="row sum"><span>실제 보수</span><b>'+money(rc.sum)+'</b></div>'
+     +'<p class="note">완료율 '+Math.round(rc.comp*100)+'% (기준 '+Math.round(rc.thr*100)+'%) → 평점 '+rc.rate+'점 · '+rc.days+'일 작업(예상 '+rc.est+'일)'+(rc.days<rc.est?' · 하루 이상 단축':'')+'</p></div>'
+     +'<button class="d go" data-a="aftrc">다음으로</button>';
+  }else if(p==='rest'){
+    h=dash()+'<span class="lab">휴무</span><div class="stack">'
+     +'<button class="d" data-a="rest" data-s="1"'+(G.money<RULE.studyCost?' disabled':'')+'>공부한다<small>−'+money(RULE.studyCost)+' · 지식 +1 (상담에서 새 질문이 열려요)</small></button>'
+     +'<button class="d" data-a="rest" data-s="0">푹 쉰다<small>체력 100</small></button></div>';
+  }else if(p==='gap'){
+    h=dash()+'<button class="d go" data-a="gapok">DM 확인하기</button>';
+  }else if(p==='settle'){
+    h=settlePanel();
+  }
+  $('#panel').innerHTML=h;
+}
+function hasHidden(){return Object.keys(C.t.objs).some(function(k){return C.t.objs[k].hidden})}
+function workPanel(){
+  var h=estimateMini();
+  if(C.msg)h+='<div class="msg'+(C.tint<0&&C.msg.indexOf('의뢰인')===0?' cold':'')+'">'+esc(C.msg)+'</div>';
+  if(UI.sel){
+    var k=UI.sel,o=C.t.objs[k],st=C.st[k];
+    h+='<div class="rep"><h4>'+esc(o.n)+' '+(o.prot?'<span class="tag prot">보호 물건</span>':'')+(o.sp?'<span class="tag sp">특별 주문</span>':'')+'</h4>';
+    if(C.clues[k])h+='<p class="hint" style="margin:0 0 6px">'+esc(C.clues[k])+'</p>';
+    if(st)h+='<p class="hint">'+{moved:'정리했어요.',gone:'버렸어요.',kept:'보류해 두었어요. 의뢰인에게 확인할게요.'}[st]+'</p>';
+    else{
+      h+='<div class="row3">';
+      o.a.forEach(function(a){if(a==='look'&&C.clues[k])return;
+        var why=canAct(a,k);
+        h+='<button class="d'+(a==='throw'&&o.prot?' warn':'')+'" data-a="act" data-x="'+a+'" data-k="'+k+'"'+(why?' disabled title="'+esc(why)+'"':'')+'>'+ACT[a]+'<small>체력 '+RULE.cost[a]+' · '+RULE.time[a]+'분</small></button>'});
+      h+='</div>';
+      if(o.prot)h+='<p class="hint" style="margin-top:6px">견적서에 “건드리지 말 것”으로 적힌 물건이에요. 버려도 진행은 되지만 평점 상한이 생겨요.</p>';
+    }
+    h+='</div>';
+  }else h+='<p class="hint">방의 물건을 눌러 조사·정리·보류·폐기해요. 모든 행동은 체력과 시간을 써요'+(G.hp<RULE.tired?'. 지금은 지쳐서 시간이 두 배로 걸려요':'')+'.</p>';
+  var to=talkOptions().length,talkable=(C.t.talk||[]).length&&C.talk===0;
+  h+='<div class="row2"><button class="d" data-a="talk"'+(talkable&&to?'':' disabled')+'>의뢰인과 이야기한다<small>'+(C.talk?'이미 이야기했어요':(!(C.t.talk||[]).length?'이 의뢰는 대화가 없어요':(to?'체력 '+RULE.cost.talk+' · '+RULE.time.talk+'분 · 선택':'근거가 될 단서가 아직 없어요')))+'</small></button>'
+    +'<button class="d" data-a="endday"'+(C.ext?'':'')+'>하루 마무리<small>'+(C.ext?'연장 종료 · 내일 70':(C.min<=RULE.early?'지금 마치면 일찍 · 내일 100':'보통 · 내일 85'))+'</small></button></div>';
+  if(nClues())h+='<div class="rep"><h4>찾은 단서 '+nClues()+'</h4><ul class="clues">'+Object.keys(C.clues).map(function(k){return '<li><b>'+esc(C.t.objs[k].n)+'</b>'+esc(C.clues[k])+'</li>'}).join('')+'</ul></div>';
+  return h;
+}
+function estimateMini(){
+  var t=C.t,prot=Object.keys(t.objs).filter(function(k){return t.objs[k].prot}).map(function(k){return t.objs[k].n});
+  return '<div class="rep"><h4>'+esc(t.title)+' <span class="tag'+(t.kind==='main'?' main':'')+'">'+(t.kind==='main'?'메인':'서브')+'</span></h4>'
+   +'<div class="r"><span>완료율</span><b>'+handled()+' / '+C.req.length+' · '+Math.round(comp()*100)+'% (기준 '+Math.round(C.thr*100)+'%)</b></div>'
+   +'<div class="r"><span>특별 청소 주문</span><b>'+esc(t.special.t)+(C.special?' ✓':'')+'</b></div>'
+   +'<div class="r"><span>보호 물건</span><b>'+(prot.length?esc(prot.join(', ')):'없음')+(C.protGone?' · 폐기 '+C.protGone:'')+'</b></div></div>';
+}
+function settlePanel(){
+  var tot=G.receipts.reduce(function(a,r){return a+r.sum},0),tips=0;
+  G.receipts.forEach(function(r){r.rows.forEach(function(x){if(x[0]==='팁')tips+=x[1]})});
+  var missed=MAINS.filter(function(m){return G.done.indexOf(m.id)<0});
+  var c={none:0,warm:0,fail:0};G.reviews.forEach(function(r){if(r.tone==='none')c.none++;else if(r.tone==='fail')c.fail++;else c.warm++});
+  var label=(c.warm>0&&c.warm>=c.none&&c.warm>=c.fail)?'이야기를 들어 주는 사람':((c.fail>0&&c.fail>c.none)?'말이 앞서는 사람':'말없이 깔끔한 사람');  // 라벨 문구는 가안 (7장 10번)
+  var tr=G.att.throw+G.att.keep;
+  var h='<span class="lab">1분기 결산</span><div class="paper"><h5>분기 영수증<span>Q1</span></h5>'
+   +'<div class="row"><span>마친 의뢰</span><b>메인 '+G.mainR.length+' · 서브 '+G.subR.length+'</b></div>'
+   +'<div class="row"><span>수입 합계</span><b>'+money(tot)+' (팁 '+money(tips)+')</b></div>'
+   +'<div class="row"><span>메인 평점 이동평균</span><b>'+f1(avg(G.mainR))+'</b></div>'
+   +'<div class="row"><span>서브 평점 평균</span><b>'+f1(avg(G.subR))+'</b></div>'
+   +'<div class="row"><span>2분기 메인 기준</span><b>'+['쉬움 60%','기본 70%','엄격 80%'][G.mlv]+'</b></div>'
+   +'<div class="row"><span>지식</span><b>'+G.know+'</b></div>'
+   +(missed.length?'<div class="row minus"><span>놓친 메인</span><b>'+missed.map(function(m){return m.title}).join(', ')+'</b></div>':'')
+   +'</div><div class="rep"><h4>태도 요약</h4>'
+   +'<div class="r"><span>후기로 본 당신</span><b>'+label+'</b></div>'
+   +'<div class="r"><span>후기 분위기</span><b>'+toneCount()+'</b></div>'
+   +'<div class="r"><span>조사</span><b>'+G.att.look+'회</b></div>'
+   +'<div class="r"><span>처리 성향</span><b>'+(tr?'폐기 '+Math.round(G.att.throw/tr*100)+'% · 보류 '+G.att.keep+'회':'–')+'</b></div>'
+   +'<div class="r"><span>상담</span><b>'+G.att.talk+'회 (닿음 '+G.att.ok+' · 어긋남 '+G.att.fail+')</b></div></div>'
+   +'<p class="hint">2분기에는 2장 “남겨진 물건이 많은 방”이 도착해요. 이 프로토타입은 여기까지예요.</p>'
+   +'<div class="stack"><button class="d go" data-a="title">처음으로</button></div>'+dashLogOnly();
+  return h;
+}
+function dashLogOnly(){return '<div class="rep"><button class="logbtn" data-a="log">'+(UI.logOpen?'▾':'▸')+' 규칙 로그 ('+G.log.length+')</button>'+(UI.logOpen?'<ul class="rlog">'+G.log.map(function(l){return '<li>'+l+'</li>'}).join('')+'</ul>':'')+'</div>'}
+
+/* ---------------- 입력 ---------------- */
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-a]');if(!el||el.disabled)return;
+  var a=el.dataset.a;
+  switch(a){
+    case 'new':newGame(+el.dataset.q);UI.dmSel=null;break;
+    case 'title':G={phase:'title'};C=null;break;
+    case 'log':UI.logOpen=!UI.logOpen;break;
+    case 'dm':UI.dmSel=el.dataset.u;break;
+    case 'accept':var it=G.inbox.filter(function(x){return x.uid===UI.dmSel})[0];if(it){startJob(it);UI.dmSel=null}break;
+    case 'decline':G.inbox=G.inbox.filter(function(x){return x.uid!==UI.dmSel});UI.dmSel=null;break;
+    case 'volrest':volRest();break;
+    case 'sel':if(G.phase!=='work')return;UI.sel=UI.sel===el.dataset.k?null:el.dataset.k;break;
+    case 'act':doAct(el.dataset.x,el.dataset.k);break;
+    case 'talk':G.phase='talk';break;
+    case 'say':doTalk(+el.dataset.i);break;
+    case 'back':G.phase='work';C.msg='말을 아끼고 청소로 돌아왔어요.';break;
+    case 'endday':endDay();break;
+    case 'ext':C.ext=el.dataset.x;G.phase='work';
+      if(C.ext==='look'&&hasHidden()&&!C.hiddenOn){C.hiddenOn=true;var hk=Object.keys(C.t.objs).filter(function(k){return C.t.objs[k].hidden})[0];C.justFound=hk;C.msg='늦게까지 살펴보다가 '+C.t.objs[hk].n+'을(를) 발견했어요. 내일 대화에 쓸 수 있을지도 몰라요.'}
+      else C.msg=C.ext==='work'?'오늘은 늦게까지 손을 더 써요.':'오늘은 늦게까지 더 살펴봐요.';
+      break;
+    case 'nextday':nextDay();break;
+    case 'finish':finishJob();break;
+    case 'aftrc':afterReceipt();checkEnd();break;
+    case 'rest':doRest(el.dataset.s==='1');break;
+    case 'gapok':G.phase='inbox';checkEnd();break;
+  }
+  render();
+});
+G={phase:'title'};render();
+</script>
+</body>
+</html>
